@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(pnpm install:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm run dev)",
+      "Bash(test:*)",
+      "Bash(pnpm --version:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm store:*)",
+      "Bash(git clone:*)",
+      "Bash(cp:*)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm add:*)",
+      "Bash(taskkill:*)",
+      "Bash(claude mcp list)",
+      "Bash(claude mcp remove:*)",
+      "Bash(npx @playwright/mcp@latest screenshot:*)",
+      "Bash(powershell \"Stop-Process -Name node -Force\")",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "Bash(powershell \"Get-Process node | Stop-Process -Force\")",
+      "Bash(pnpm run build:*)",
+      "Bash(powershell \"Get-Process node | Select-Object Id, ProcessName, StartTime | Format-Table\")",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(powershell \"Start-Sleep -Seconds 8\")",
+      "Bash(npx supabase db push)",
+      "Bash(npx supabase:*)",
+      "mcp__supabase__apply_migration"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

@@ -1,0 +1,43 @@
+/* ========================================
+   Z-INDEX HIERARCHY SYSTEM
+   Centralized z-index management to prevent conflicts
+   ======================================== */
+
+:root {
+  /* Base layers - Content that should be behind everything */
+  --z-below: -1;        /* Elements that should appear behind normal content */
+  --z-base: 0;          /* Default layer for normal content */
+  --z-above: 1;         /* Slightly elevated content */
+
+  /* Interactive elements - Dropdowns, popovers, tooltips */
+  --z-dropdown: 10;     /* Dropdown menus */
+  --z-sticky: 20;       /* Sticky headers, sidebars */
+  --z-fixed: 30;        /* Fixed position elements */
+
+  /* Overlays - Modals, dialogs, notifications */
+  --z-backdrop: 40;     /* Modal backdrops, overlays */
+  --z-modal: 50;        /* Modal dialogs */
+  --z-notification: 60; /* Toast notifications, alerts */
+
+  /* Special cases - Use sparingly */
+  --z-maximum: 100;     /* Absolute top layer (close buttons, critical UI) */
+}
+
+/* ========================================
+   USAGE GUIDELINES
+   ======================================== */
+/*
+  1. Always use CSS variables: z-index: var(--z-modal);
+  2. Never use arbitrary numbers like z-index: 9999;
+  3. If you need a new layer, add it to this file first
+  4. Keep values spaced by 10 to allow intermediate values if needed
+
+  Example:
+  .my-modal {
+    z-index: var(--z-modal);
+  }
+
+  .my-modal-close-button {
+    z-index: calc(var(--z-modal) + 1);
+  }
+*/

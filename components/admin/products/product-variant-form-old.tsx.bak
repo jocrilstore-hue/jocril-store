@@ -1,0 +1,347 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import { createClient } from "@/lib/supabase/client"
+import type { ProductVariantDetail, SizeFormatOption } from "@/lib/supabase/queries/admin-products"
+import { Loader2 } from "lucide-react"
+
+const variantSchema = z.object({
+  sku: z.string().min(3),
+  barcode: z.string().optional().nullable(),
+  urlSlug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Utilize apenas letras minúsculas e hífen."),
+  sizeFormatId: z.string(),
+  orientation: z.enum(["vertical", "horizontal"]),
+  basePriceExcludingVat: z.number().min(0),
+  basePriceIncludingVat: z.number().min(0),
+  costPrice: z.number().optional().nullable(),
+  stockQuantity: z.number().optional().nullable(),
+  stockStatus: z.enum(["in_stock", "out_of_stock", "preorder", "discontinued"]),
+  lowStockThreshold: z.number().optional().nullable(),
+  restockDate: z.string().optional().nullable(),
+  mainImageUrl: z.string().optional().nullable(),
+  specificDescription: z.string().optional().nullable(),
+  idealFor: z.string().optional().nullable(),
+  capacityDescription: z.string().optional().nullable(),
+  weightGrams: z.number().optional().nullable(),
+  customWidthMm: z.number().optional().nullable(),
+  customHeightMm: z.number().optional().nullable(),
+  customDepthMm: z.number().optional().nullable(),
+  isActive: z.boolean(),
+})
+
+type VariantFormValues = z.infer<typeof variantSchema>
+
+interface ProductVariantFormProps {
+  mode: "create" | "edit"
+  templateId: number
+  variant?: ProductVariantDetail | null
+  sizeFormats: SizeFormatOption[]
+}
+
+export function ProductVariantForm({ mode, templateId, variant, sizeFormats }: ProductVariantFormProps) {
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+  const { toast } = useToast()
+  const [savingState, setSavingState] = useState<"idle" | "saving">("idle")
+
+  const form = useForm<VariantFormValues>({
+    resolver: zodResolver(variantSchema),
+    defaultValues: {
+      sku: variant?.sku ?? "",
+      barcode: variant?.barcode ?? "",
+      urlSlug: variant?.urlSlug ?? "",
+      sizeFormatId: variant?.sizeFormatId ? String(variant.sizeFormatId) : "custom",
+      orientation: (variant?.orientation as VariantFormValues["orientation"]) ?? "vertical",
+      basePriceExcludingVat: variant?.basePriceExcludingVat ?? 0,
+      basePriceIncludingVat: variant?.basePriceIncludingVat ?? 0,
+      costPrice: variant?.costPrice ?? null,
+      stockQuantity: variant?.stockQuantity ?? null,
+      stockStatus: (variant?.stockStatus as VariantFormValues["stockStatus"]) ?? "in_stock",
+      lowStockThreshold: variant?.lowStockThreshold ?? null,
+      restockDate: variant?.restockDate ?? "",
+      mainImageUrl: variant?.mainImageUrl ?? "",
+      specificDescription: variant?.specificDescription ?? "",
+      idealFor: variant?.idealFor ?? "",
+      capacityDescription: variant?.capacityDescription ?? "",
+      weightGrams: variant?.weightGrams ?? null,
+      customWidthMm: variant?.customWidthMm ?? null,
+      customHeightMm: variant?.customHeightMm ?? null,
+      customDepthMm: variant?.customDepthMm ?? null,
+      isActive: variant?.isActive ?? true,
+    },
+  })
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    try {
+      setSavingState("saving")
+      const payload = {
+        sku: values.sku,
+        barcode: values.barcode || null,
+        url_slug: values.urlSlug,
+        size_format_id: values.sizeFormatId === "custom" ? null : Number(values.sizeFormatId),
+        orientation: values.orientation,
+        base_price_excluding_vat: values.basePriceExcludingVat,
+        base_price_including_vat: values.basePriceIncludingVat,
+        cost_price: values.costPrice ?? null,
+        stock_quantity: values.stockQuantity ?? null,
+        stock_status: values.stockStatus,
+        low_stock_threshold: values.lowStockThreshold ?? null,
+        restock_date: values.restockDate || null,
+        main_image_url: values.mainImageUrl || null,
+        specific_description: values.specificDescription || null,
+        ideal_for: values.idealFor || null,
+        capacity_description: values.capacityDescription || null,
+        weight_grams: values.weightGrams ?? null,
+        custom_width_mm: values.sizeFormatId === "custom" ? values.customWidthMm ?? null : null,
+        custom_height_mm: values.sizeFormatId === "custom" ? values.customHeightMm ?? null : null,
+        custom_depth_mm: values.sizeFormatId === "custom" ? values.customDepthMm ?? null : null,
+        is_active: values.isActive,
+      }
+
+      let variantId = variant?.id
+
+      if (mode === "create" || !variantId) {
+        const { data, error } = await supabase
+          .from("product_variants")
+          .insert({
+            ...payload,
+            product_template_id: templateId,
+          })
+          .select("id")
+          .single()
+        if (error) throw error
+        variantId = data?.id
+      } else {
+        const { error } = await supabase.from("product_variants").update(payload).eq("id", variantId)
+        if (error) throw error
+      }
+
+      toast({
+        title: "Variação guardada",
+        description: "As alterações foram registadas com sucesso.",
+      })
+
+      if (mode === "create" && variantId) {
+        router.push(`/admin/products/${templateId}/variants/${variantId}/edit`)
+        return
+      }
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: "Erro ao guardar",
+        description: "Confirme os dados e tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingState("idle")
+    }
+  })
+
+  const showCustomDimensions = form.watch("sizeFormatId") === "custom"
+
+  return (
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" className="gap-2" disabled={savingState === "saving"}>
+          {savingState === "saving" && <Loader2 className="h-4 w-4 animate-spin" />}
+          Guardar variante
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Identificação</CardTitle>
+          <CardDescription>Defina os campos únicos desta variação.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label htmlFor="sku">SKU</Label>
+            <Input id="sku" {...form.register("sku")} />
+          </div>
+          <div>
+            <Label htmlFor="barcode">Código de barras</Label>
+            <Input id="barcode" {...form.register("barcode")} />
+          </div>
+          <div>
+            <Label htmlFor="urlSlug">Slug</Label>
+            <Input id="urlSlug" {...form.register("urlSlug")} />
+          </div>
+          <div>
+            <Label>Formato</Label>
+            <Select
+              value={form.watch("sizeFormatId")}
+              onValueChange={(value) => form.setValue("sizeFormatId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sizeFormats.map((format) => (
+                  <SelectItem key={format.id} value={String(format.id)}>
+                    {format.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Orientação</Label>
+            <Select
+              value={form.watch("orientation")}
+              onValueChange={(value: VariantFormValues["orientation"]) => form.setValue("orientation", value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="vertical">Vertical</SelectItem>
+                <SelectItem value="horizontal">Horizontal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Ativo</p>
+              <p className="text-xs text-muted-foreground">Disponível para compra</p>
+            </div>
+            <Switch checked={form.watch("isActive")} onCheckedChange={(checked) => form.setValue("isActive", checked)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {showCustomDimensions && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Dimensões personalizadas</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div>
+              <Label htmlFor="customWidthMm">Largura (mm)</Label>
+              <Input id="customWidthMm" type="number" {...form.register("customWidthMm", { valueAsNumber: true })} />
+            </div>
+            <div>
+              <Label htmlFor="customHeightMm">Altura (mm)</Label>
+              <Input id="customHeightMm" type="number" {...form.register("customHeightMm", { valueAsNumber: true })} />
+            </div>
+            <div>
+              <Label htmlFor="customDepthMm">Profundidade (mm)</Label>
+              <Input id="customDepthMm" type="number" {...form.register("customDepthMm", { valueAsNumber: true })} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Preço</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <div>
+            <Label htmlFor="priceExVat">Preço s/ IVA (€)</Label>
+            <Input
+              id="priceExVat"
+              type="number"
+              step="0.01"
+              {...form.register("basePriceExcludingVat", { valueAsNumber: true })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="priceIncVat">Preço c/ IVA (€)</Label>
+            <Input
+              id="priceIncVat"
+              type="number"
+              step="0.01"
+              {...form.register("basePriceIncludingVat", { valueAsNumber: true })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="costPrice">Preço de custo (€)</Label>
+            <Input id="costPrice" type="number" step="0.01" {...form.register("costPrice", { valueAsNumber: true })} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Stock & logística</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <div>
+            <Label htmlFor="stockQty">Quantidade</Label>
+            <Input id="stockQty" type="number" {...form.register("stockQuantity", { valueAsNumber: true })} />
+          </div>
+          <div>
+            <Label>Estado de stock</Label>
+            <Select
+              value={form.watch("stockStatus")}
+              onValueChange={(value: VariantFormValues["stockStatus"]) => form.setValue("stockStatus", value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_stock">Disponível</SelectItem>
+                <SelectItem value="out_of_stock">Sem stock</SelectItem>
+                <SelectItem value="preorder">Pré-encomenda</SelectItem>
+                <SelectItem value="discontinued">Descontinuado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="lowStock">Alerta stock</Label>
+            <Input id="lowStock" type="number" {...form.register("lowStockThreshold", { valueAsNumber: true })} />
+          </div>
+          <div>
+            <Label htmlFor="restockDate">Reposição prevista</Label>
+            <Input id="restockDate" type="date" {...form.register("restockDate")} />
+          </div>
+          <div>
+            <Label htmlFor="weightGrams">Peso (g)</Label>
+            <Input id="weightGrams" type="number" {...form.register("weightGrams", { valueAsNumber: true })} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Conteúdo específico</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Descrição específica</Label>
+            <Textarea rows={4} {...form.register("specificDescription")} />
+          </div>
+          <div>
+            <Label>Ideal para</Label>
+            <Textarea rows={4} {...form.register("idealFor")} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Capacidade</Label>
+            <Input {...form.register("capacityDescription")} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Imagem principal</Label>
+            <Input {...form.register("mainImageUrl")} placeholder="https://..." />
+          </div>
+        </CardContent>
+      </Card>
+    </form>
+  )
+}

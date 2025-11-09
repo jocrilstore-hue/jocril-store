@@ -1,0 +1,929 @@
+/* ========================================
+   COMPONENTS CSS
+   Extracted from Tailwind utility classes
+   ======================================== */
+
+/* ========================================
+   TYPOGRAPHY COMPONENTS
+   ======================================== */
+
+/* Mono small text - used extensively across the site (97+ instances) */
+.text-mono-xs {
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  line-height: 100%;
+  letter-spacing: -0.015rem;
+  text-transform: uppercase;
+  text-wrap: pretty;
+}
+
+/* Mono small text - 14px variant */
+.text-mono-sm {
+  font-family: var(--font-geist-mono);
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: -0.0175rem;
+  text-transform: uppercase;
+  text-wrap: pretty;
+}
+
+/* Mono medium text - 16px/18px responsive */
+.text-mono-md {
+  font-family: var(--font-geist-mono);
+  font-size: 16px;
+  line-height: 120%;
+  letter-spacing: -0.02rem;
+  text-wrap: pretty;
+}
+
+@media (min-width: 1024px) {
+  .text-mono-md {
+    font-size: 18px;
+    letter-spacing: -0.0225rem;
+  }
+}
+
+/* Mono meta text - for job listings, metadata */
+.text-mono-meta {
+  font-family: var(--font-geist-mono);
+  font-size: 14px;
+  line-height: 120%;
+  letter-spacing: -0.0175rem;
+  text-wrap: pretty;
+}
+
+@media (min-width: 1024px) {
+  .text-mono-meta {
+    font-size: 16px;
+    letter-spacing: -0.02rem;
+  }
+}
+
+/* Heading 1 - Hero title */
+.heading-1 {
+  font-size: 70px;
+  line-height: 110%;
+  letter-spacing: -0.105rem;
+  font-weight: normal;
+}
+
+@media (min-width: 1024px) {
+  .heading-1 {
+    font-size: 130px;
+    line-height: 105%;
+    letter-spacing: -0.195rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .heading-1 {
+    font-size: 160px;
+    line-height: 100%;
+    letter-spacing: -0.24rem;
+  }
+}
+
+/* Heading 2 - Section headings */
+.heading-2 {
+  font-size: 30px;
+  line-height: 100%;
+  letter-spacing: -0.05625rem;
+  font-weight: normal;
+}
+
+@media (min-width: 1024px) {
+  .heading-2 {
+    font-size: 48px;
+    letter-spacing: -0.09rem;
+  }
+}
+
+/* ========================================
+   BUTTON COMPONENTS
+   ======================================== */
+
+/* Base button styles - shared across all buttons */
+.btn {
+  position: relative;
+  display: inline-flex;
+  width: max-content;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 0.125rem; /* rounded-sm */
+  overflow: clip;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn:focus-visible {
+  outline: 1px solid var(--color-light-base-secondary);
+  outline-offset: 4px;
+}
+
+/* Button sizes */
+.btn-sm {
+  height: 25px;
+  padding: 0 0.75rem; /* px-3 */
+}
+
+.btn-md {
+  height: 31px;
+  padding: 0 14px; /* h-[31px] px-[14px] */
+}
+
+/* Login Button Variant */
+.btn-login {
+  background-color: var(--color-light-base-secondary);
+  border-color: transparent;
+}
+
+.btn-login * {
+  color: var(--color-dark-base-primary);
+}
+
+.btn-login:hover {
+  background-color: var(--color-dark-base-primary);
+  border-color: var(--color-base-600);
+}
+
+.btn-login:hover * {
+  color: var(--color-light-base-secondary);
+}
+
+.btn-login:focus-visible {
+  background-color: var(--color-dark-base-primary);
+  border-color: var(--color-base-600);
+  outline-color: var(--color-light-base-secondary);
+}
+
+.btn-login:focus-visible * {
+  color: var(--color-light-base-secondary);
+}
+
+/* CTA Button Variant (Contact Sales, etc.) */
+.btn-cta {
+  background-color: var(--color-base-1000);
+  border-color: transparent;
+}
+
+[data-theme="light"] .btn-cta {
+  background-color: var(--color-dark-base-primary);
+  border-color: var(--color-base-700);
+}
+
+.btn-cta * {
+  color: var(--color-light-base-primary);
+}
+
+.btn-cta:hover {
+  background-color: var(--color-light-base-secondary);
+  outline: 1px solid var(--color-light-base-secondary);
+}
+
+.btn-cta:hover * {
+  color: var(--color-dark-base-primary);
+}
+
+.btn-cta:focus-visible {
+  background-color: var(--color-light-base-secondary);
+  outline: 1px solid var(--color-light-base-secondary);
+}
+
+.btn-cta:focus-visible * {
+  color: var(--color-dark-base-primary);
+}
+
+/* Apply Button Variant (Job listings, etc.) */
+.btn-apply {
+  background-color: var(--color-base-1000);
+  border-color: transparent;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+  pointer-events: none;
+}
+
+[data-theme="light"] .btn-apply {
+  background-color: var(--color-dark-base-primary);
+  border-color: var(--color-base-700);
+}
+
+.btn-apply * {
+  color: var(--color-light-base-primary);
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+/* Group hover states for btn-apply */
+.group:hover .btn-apply {
+  background-color: var(--color-light-base-secondary);
+  outline: 1px solid var(--color-light-base-secondary);
+  border-color: var(--color-base-600);
+}
+
+.group:hover .btn-apply * {
+  color: var(--color-dark-base-primary);
+}
+
+/* Direct hover states for btn-apply */
+.btn-apply:hover {
+  background-color: var(--color-light-base-secondary);
+  outline: 1px solid var(--color-light-base-secondary);
+  border-color: var(--color-base-600);
+}
+
+.btn-apply:hover * {
+  color: var(--color-dark-base-primary);
+}
+
+/* Focus states for btn-apply */
+.btn-apply:focus-visible {
+  background-color: var(--color-light-base-secondary);
+  outline: 1px solid var(--color-light-base-secondary);
+  border-color: var(--color-base-600);
+}
+
+.btn-apply:focus-visible * {
+  color: var(--color-dark-base-primary);
+}
+
+/* Delayed fade-in animation for btn-apply content */
+@keyframes delayedFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.group:hover .btn-apply > div {
+  animation: delayedFadeIn 100ms ease-out forwards;
+}
+
+/* ========================================
+   NAVIGATION COMPONENTS
+   ======================================== */
+
+/* Navigation link base */
+.nav-link {
+  position: relative;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  transition: color 200ms, background-color 200ms, border-color 200ms;
+  color: var(--color-base-400);
+}
+
+/* Navigation link hover effects */
+.nav-link:hover {
+  color: var(--color-orange-500);
+}
+
+/* Navigation link underline animation */
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  width: 0;
+  background-color: currentColor;
+  transition: all 300ms ease-in-out;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Header CTA Buttons - Consistent sizing */
+.header-cta > a,
+.header-cta > div {
+  height: 44px; /* Fixed height for both elements */
+  min-height: 44px;
+}
+
+/* Contact/Shop button sizing */
+.header-cta > a[data-element="contact-sales-button"] {
+  padding: 0 1.25rem; /* Adjusted horizontal padding for better proportion */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Theme switcher container sizing */
+.header-cta > div:has(.theme-selector-button) {
+  padding: 0.375rem; /* 6px padding to accommodate larger buttons */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Theme selector buttons - larger size */
+.theme-selector-button {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.theme-selector-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ========================================
+   BADGE COMPONENTS
+   ======================================== */
+
+/* Base badge component */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem; /* gap-3 */
+  text-transform: uppercase;
+}
+
+/* Badge with icon styling */
+.badge [data-slot='badge-icon'] {
+  border-color: transparent;
+  background-color: var(--color-accent-300);
+}
+
+.badge * {
+  color: var(--color-base-500);
+}
+
+/* ========================================
+   CARD COMPONENTS
+   ======================================== */
+
+/* Job listing card */
+.job-listing {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: -1px;
+  border-top: 1px solid var(--color-base-800);
+  border-bottom: 1px solid transparent;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  transition: background-color 0s;
+}
+
+@media (min-width: 768px) {
+  .job-listing {
+    grid-template-columns: 150px 1fr auto;
+    gap: 3.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .job-listing {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+.job-listing:last-child {
+  border-bottom: 1px solid var(--color-base-800);
+}
+
+.job-listing:hover {
+  z-index: var(--z-dropdown);
+  border-top: 1px dashed var(--color-light-base-primary);
+  border-bottom: 1px dashed var(--color-light-base-primary);
+}
+
+.job-listing:hover:last-child {
+  border-bottom: 1px dashed var(--color-light-base-primary);
+}
+
+/* Job listing item wrapper */
+.job-listing-item:last-child > a:hover {
+  border-bottom: 1px dashed var(--color-light-base-primary);
+}
+
+.job-listing-item:hover + .job-listing-item > a {
+  border-top-color: transparent;
+}
+
+.job-listing-item:has(+ .job-listing-item:hover) > a {
+  border-bottom-color: transparent;
+}
+
+/* Job category badge */
+.job-category-badge {
+  display: grid;
+  place-content: center;
+  height: 1.25rem;
+  width: fit-content;
+  border-radius: 0.125rem;
+  border: 1px solid var(--color-base-700);
+  background-color: var(--color-base-1000);
+  padding: 0 0.25rem;
+}
+
+[data-theme="light"] .job-category-badge {
+  border-color: var(--color-base-400);
+}
+
+.job-category-badge * {
+  color: var(--color-light-base-secondary);
+}
+
+/* Card footer pattern */
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: auto;
+  padding: 0 1rem;
+}
+
+/* Link with underline animation */
+.link-underline {
+  position: relative;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  transition: color 200ms, background-color 200ms, border-color 200ms;
+}
+
+/* NOTE: Use .nav-link class for underline animation (see NAVIGATION COMPONENTS section) */
+
+/* ========================================
+   LAYOUT UTILITIES
+   ======================================== */
+
+/* Flex column with gap */
+.flex-col-gap-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.flex-col-gap-4 {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.flex-col-gap-6 {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Flex row with items-center and justify-between */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Grid with 4 columns, 12 on large screens */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .grid-layout {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Common container patterns */
+.container-section {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .container-section {
+    padding-left: 2.25rem;
+    padding-right: 2.25rem;
+  }
+}
+
+/* Flex wrap with gap */
+.flex-wrap-gap-2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Overflow hidden container */
+.overflow-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Responsive visibility helpers */
+@media (max-width: 767px) {
+  .hidden-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .visible-md {
+    display: flex;
+  }
+
+  .hidden-md {
+    display: none;
+  }
+}
+
+/* Text color variants */
+.text-base-400 {
+  color: var(--color-base-400);
+}
+
+/* Flex utilities for buttons */
+.items-center {
+  align-items: center;
+}
+
+.gap-0-5 {
+  gap: 0.125rem;
+}
+
+/* Transition utilities */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-duration: 200ms;
+}
+
+.duration-200 {
+  transition-duration: 200ms;
+}
+
+/* ========================================
+   PORTFOLIO GRID SECTION
+   ======================================== */
+
+/* Portfolio Grid Layout */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: 100%;
+  grid-auto-flow: dense; /* Fill gaps automatically */
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 640px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 1024px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Title Block - spans 2 rows on desktop */
+.portfolio-title-block {
+  background-color: var(--color-dark-base-primary);
+  border: 1px dashed var(--color-base-500);
+  border-radius: 6px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .portfolio-title-block {
+    grid-row: span 2;
+    min-height: 100%;
+  }
+}
+
+/* Mobile/Tablet: title block is normal height */
+@media (max-width: 1023px) {
+  .portfolio-title-block {
+    min-height: 250px;
+  }
+}
+
+/* Portfolio Card Base Styles */
+.portfolio-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-card:hover {
+  opacity: 0.9;
+}
+
+/* Wide cards - span 2 columns on desktop and tablet */
+.portfolio-card-wide {
+  /* Base styles inherited from .portfolio-card */
+}
+
+@media (min-width: 640px) {
+  .portfolio-card-wide {
+    grid-column: span 2;
+  }
+}
+
+/* Tall cards - span 2 rows on desktop */
+.portfolio-card-tall {
+  /* Base styles inherited from .portfolio-card */
+}
+
+@media (min-width: 1024px) {
+  .portfolio-card-tall {
+    grid-row: span 2;
+  }
+}
+
+/* Mobile: remove all spanning, stack vertically */
+@media (max-width: 639px) {
+  .portfolio-card-wide,
+  .portfolio-card-tall {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* Portfolio Card Image Container - with dashed border */
+.portfolio-card-image-container {
+  border: 1px dashed var(--color-base-500);
+  border-radius: 6px;
+  background-color: var(--color-dark-base-primary);
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.portfolio-card:hover .portfolio-card-image-container {
+  border-color: var(--color-base-400);
+}
+
+/* Portfolio Card Image - uniform height for all cards */
+.portfolio-card-image {
+  width: 100%;
+  height: 280px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .portfolio-card-image {
+    height: 320px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .portfolio-card-image {
+    height: 360px;
+  }
+}
+
+.portfolio-card:hover .portfolio-card-image {
+  transform: scale(1.03);
+}
+
+/* Portfolio Card Text - positioned beneath image */
+.portfolio-card-text {
+  padding: 16px 0 0 0;
+  text-align: left;
+}
+
+/* Portfolio Card Title - uses utility classes text-foreground text-mono-meta group-hover:text-accent-100 */
+.portfolio-card-title {
+  margin: 0 0 8px 0;
+}
+
+/* Portfolio Card Client Name - lighter subtitle text */
+.portfolio-card-client {
+  font-family: var(--font-geist-sans);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--color-base-500);
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (min-width: 1024px) {
+  .portfolio-card-client {
+    font-size: 14px;
+  }
+}
+
+/* Focus States for Accessibility */
+.portfolio-card:focus {
+  outline: 2px solid var(--color-accent-300);
+  outline-offset: 4px;
+}
+
+.portfolio-card:focus-visible {
+  outline: 2px solid var(--color-accent-300);
+  outline-offset: 4px;
+}
+
+/* Portfolio Section Wrapper */
+.portfolio-section {
+  scroll-margin-top: 80px;
+}
+
+/* ========================================
+   TOP MENU BUTTON COMPONENTS
+   ======================================== */
+
+/* "LOJA ONLINE" Button - Main button styling */
+.btn-loja-online {
+  display: none; /* hidden by default */
+  border-radius: 9999px; /* rounded-full */
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground); /* text-foreground */
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  line-height: 100%;
+  letter-spacing: -0.015rem;
+  text-transform: uppercase;
+  text-wrap: pretty;
+  transition-property: color, background-color, border-color;
+  transition-duration: 200ms;
+}
+
+@media (min-width: 768px) {
+  .btn-loja-online {
+    display: inline-flex; /* md:flex */
+  }
+}
+
+.btn-loja-online:hover {
+  background-color: var(--color-secondary);
+}
+
+/* Theme Switcher Button Container */
+.btn-theme-switcher {
+  display: none; /* hidden by default */
+  border-radius: 9999px; /* rounded-full */
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  transition-property: color, background-color, border-color;
+  transition-duration: 200ms;
+}
+
+@media (min-width: 768px) {
+  .btn-theme-switcher {
+    display: inline-flex; /* md:flex */
+  }
+}
+
+/* Mobile Menu Toggle Button */
+.btn-mobile-menu-toggle {
+  position: relative;
+  margin: -0.25rem; /* -m-1 */
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem; /* p-1 */
+  color: #6b7280; /* text-gray-500 */
+  transition-property: color, background-color, border-color;
+  transition-duration: 200ms;
+}
+
+@media (min-width: 1024px) {
+  .btn-mobile-menu-toggle {
+    display: none; /* lg:hidden */
+  }
+}
+
+.btn-mobile-menu-toggle:hover {
+  color: #374151; /* hover:text-gray-700 */
+}
+
+/* Header CTA Container - Enhanced with gap */
+.header-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* gap-3 */
+}
+
+/* ========================================
+   PORTFOLIO LIGHTBOX
+   ======================================== */
+
+.portfolio-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: var(--z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-lightbox.active {
+  display: flex;
+  opacity: 1;
+}
+
+.portfolio-lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  border: 1px dashed var(--color-base-500);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--color-dark-base-primary);
+}
+
+.portfolio-lightbox-image {
+  display: block;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.portfolio-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 1px dashed var(--color-base-500);
+  border-radius: 4px;
+  color: var(--color-light-base-primary);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: var(--z-maximum);
+}
+
+.portfolio-lightbox-close:hover {
+  background-color: var(--color-base-800);
+  border-color: var(--color-base-400);
+  transform: scale(1.1);
+}
+
+.portfolio-lightbox-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
+  padding: 24px;
+  color: white;
+}
+
+.portfolio-lightbox-title {
+  font-family: var(--font-geist-sans);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  color: white;
+}
+
+.portfolio-lightbox-client {
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
