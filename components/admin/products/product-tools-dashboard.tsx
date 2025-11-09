@@ -104,8 +104,8 @@ export function ProductToolsDashboard() {
             <Progress value={72} />
           </div>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <Checkbox checked readOnly />
+              <li className="flex items-center gap-2">
+                <Checkbox checked disabled />
               <span>Meta descrição definida em 81 templates</span>
             </li>
             <li className="flex items-center gap-2">

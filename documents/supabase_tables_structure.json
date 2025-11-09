@@ -1,7 +1,7 @@
 [
   {
     "documentation_json": {
-      "generated_at": "2025-11-09T06:36:52.980961+00:00",
+      "generated_at": "2025-11-09T18:54:17.7166+00:00",
       "database": "postgres",
       "schemas": [
         {
@@ -6570,6 +6570,12 @@
                   "is_primary": false
                 },
                 {
+                  "name": "product_variants_template_size_unique",
+                  "definition": "CREATE UNIQUE INDEX product_variants_template_size_unique ON public.product_variants USING btree (product_template_id, size_format_id)",
+                  "is_unique": true,
+                  "is_primary": false
+                },
+                {
                   "name": "product_variants_url_slug_key",
                   "definition": "CREATE UNIQUE INDEX product_variants_url_slug_key ON public.product_variants USING btree (url_slug)",
                   "is_unique": true,
@@ -6938,6 +6944,15 @@
                   "comment": null
                 },
                 {
+                  "name": "code",
+                  "data_type": "text",
+                  "is_nullable": false,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
                   "name": "common_uses",
                   "data_type": "text",
                   "is_nullable": true,
@@ -7016,6 +7031,12 @@
                   "name": "idx_size_formats_name",
                   "definition": "CREATE INDEX idx_size_formats_name ON public.size_formats USING btree (name)",
                   "is_unique": false,
+                  "is_primary": false
+                },
+                {
+                  "name": "size_formats_code_key",
+                  "definition": "CREATE UNIQUE INDEX size_formats_code_key ON public.size_formats USING btree (code)",
+                  "is_unique": true,
                   "is_primary": false
                 },
                 {
@@ -7146,6 +7167,255 @@
                 }
               ],
               "policies": []
+            },
+            {
+              "name": "user_roles",
+              "comment": "Stores user role assignments (admin, customer, etc.)",
+              "row_level_security": {
+                "enabled": true,
+                "forced": false
+              },
+              "columns": [
+                {
+                  "name": "granted_at",
+                  "data_type": "timestamp with time zone",
+                  "is_nullable": false,
+                  "default": "now()",
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "granted_by",
+                  "data_type": "uuid",
+                  "is_nullable": true,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "id",
+                  "data_type": "bigint",
+                  "is_nullable": false,
+                  "default": "nextval('user_roles_id_seq'::regclass)",
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "role",
+                  "data_type": "text",
+                  "is_nullable": false,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "user_id",
+                  "data_type": "uuid",
+                  "is_nullable": false,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                }
+              ],
+              "relationships": [
+                {
+                  "name": "user_roles_granted_by_fkey",
+                  "target": {
+                    "schema": "auth",
+                    "table": "users"
+                  },
+                  "column_mapping": [
+                    {
+                      "source_column": "granted_by",
+                      "target_column": "id"
+                    }
+                  ],
+                  "on_update": "NO ACTION",
+                  "on_delete": "SET NULL"
+                },
+                {
+                  "name": "user_roles_user_id_fkey",
+                  "target": {
+                    "schema": "auth",
+                    "table": "users"
+                  },
+                  "column_mapping": [
+                    {
+                      "source_column": "user_id",
+                      "target_column": "id"
+                    }
+                  ],
+                  "on_update": "NO ACTION",
+                  "on_delete": "CASCADE"
+                }
+              ],
+              "indexes": [
+                {
+                  "name": "idx_user_roles_role",
+                  "definition": "CREATE INDEX idx_user_roles_role ON public.user_roles USING btree (role)",
+                  "is_unique": false,
+                  "is_primary": false
+                },
+                {
+                  "name": "idx_user_roles_user_id",
+                  "definition": "CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id)",
+                  "is_unique": false,
+                  "is_primary": false
+                },
+                {
+                  "name": "user_roles_pkey",
+                  "definition": "CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id)",
+                  "is_unique": true,
+                  "is_primary": false
+                },
+                {
+                  "name": "user_roles_user_id_role_key",
+                  "definition": "CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role)",
+                  "is_unique": true,
+                  "is_primary": false
+                }
+              ],
+              "grants": [
+                {
+                  "grantee": "anon",
+                  "privilege": "DELETE"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "INSERT"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "REFERENCES"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "SELECT"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "TRIGGER"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "TRUNCATE"
+                },
+                {
+                  "grantee": "anon",
+                  "privilege": "UPDATE"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "DELETE"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "INSERT"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "REFERENCES"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "SELECT"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "TRIGGER"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "TRUNCATE"
+                },
+                {
+                  "grantee": "authenticated",
+                  "privilege": "UPDATE"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "DELETE"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "INSERT"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "REFERENCES"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "SELECT"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "TRIGGER"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "TRUNCATE"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "UPDATE"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "DELETE"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "INSERT"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "REFERENCES"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "SELECT"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "TRIGGER"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "TRUNCATE"
+                },
+                {
+                  "grantee": "service_role",
+                  "privilege": "UPDATE"
+                }
+              ],
+              "policies": [
+                {
+                  "name": "Admins can manage all roles",
+                  "permissive": "PERMISSIVE",
+                  "command": "ALL",
+                  "roles": [
+                    "public"
+                  ],
+                  "using": "(EXISTS ( SELECT 1\n   FROM user_roles user_roles_1\n  WHERE ((user_roles_1.user_id = auth.uid()) AND (user_roles_1.role = 'admin'::text))))",
+                  "check": null
+                },
+                {
+                  "name": "Users can view own roles",
+                  "permissive": "PERMISSIVE",
+                  "command": "SELECT",
+                  "roles": [
+                    "public"
+                  ],
+                  "using": "(auth.uid() = user_id)",
+                  "check": null
+                }
+              ]
             }
           ]
         },
@@ -8694,6 +8964,112 @@
                 },
                 {
                   "grantee": "service_role",
+                  "privilege": "UPDATE"
+                }
+              ],
+              "policies": []
+            }
+          ]
+        },
+        {
+          "name": "supabase_migrations",
+          "tables": [
+            {
+              "name": "schema_migrations",
+              "comment": null,
+              "row_level_security": {
+                "enabled": false,
+                "forced": false
+              },
+              "columns": [
+                {
+                  "name": "created_by",
+                  "data_type": "text",
+                  "is_nullable": true,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "idempotency_key",
+                  "data_type": "text",
+                  "is_nullable": true,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "name",
+                  "data_type": "text",
+                  "is_nullable": true,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "statements",
+                  "data_type": "text[]",
+                  "is_nullable": true,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                },
+                {
+                  "name": "version",
+                  "data_type": "text",
+                  "is_nullable": false,
+                  "default": null,
+                  "is_identity": false,
+                  "identity_generation": null,
+                  "comment": null
+                }
+              ],
+              "relationships": [],
+              "indexes": [
+                {
+                  "name": "schema_migrations_idempotency_key_key",
+                  "definition": "CREATE UNIQUE INDEX schema_migrations_idempotency_key_key ON supabase_migrations.schema_migrations USING btree (idempotency_key)",
+                  "is_unique": true,
+                  "is_primary": false
+                },
+                {
+                  "name": "schema_migrations_pkey",
+                  "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON supabase_migrations.schema_migrations USING btree (version)",
+                  "is_unique": true,
+                  "is_primary": false
+                }
+              ],
+              "grants": [
+                {
+                  "grantee": "postgres",
+                  "privilege": "DELETE"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "INSERT"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "REFERENCES"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "SELECT"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "TRIGGER"
+                },
+                {
+                  "grantee": "postgres",
+                  "privilege": "TRUNCATE"
+                },
+                {
+                  "grantee": "postgres",
                   "privilege": "UPDATE"
                 }
               ],

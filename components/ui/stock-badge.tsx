@@ -63,7 +63,7 @@ export function StockBadge({
  * Get icon for stock status
  */
 function getStockIcon(status: StockStatus) {
-  const iconProps = { className: "h-3 w-3", "aria-hidden": "true" }
+  const iconProps = { className: "h-3 w-3", "aria-hidden": true }
 
   switch (status) {
     case "in_stock":

@@ -35,15 +35,28 @@ type RawTemplateRow = {
   is_active?: boolean | null
   is_featured?: boolean | null
   min_order_quantity?: number | null
-  category?: {
-    id: number
-    name: string
-    slug?: string | null
-  } | null
-  material?: {
-    id: number
-    name: string
-  } | null
+  category?:
+    | {
+        id: number
+        name: string
+        slug?: string | null
+      }
+    | Array<{
+        id: number
+        name: string
+        slug?: string | null
+      }>
+    | null
+  material?:
+    | {
+        id: number
+        name: string
+      }
+    | Array<{
+        id: number
+        name: string
+      }>
+    | null
   variants?: Array<{
     id: number
     is_active?: boolean | null
@@ -132,6 +145,8 @@ export interface VariantSummary {
   mainImageUrl?: string | null
   weightGrams?: number | null
   isActive: boolean
+  isBestseller?: boolean
+  displayOrder?: number | null
   sizeFormat?: SizeFormatOption | null
   priceTierCount: number
   imageCount: number
@@ -169,6 +184,16 @@ function normalizeSort(sort?: ProductTemplateSort) {
 
 function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
   const variants = row.variants ?? []
+  const categoryInfo = row.category
+    ? Array.isArray(row.category)
+      ? row.category[0] ?? null
+      : row.category
+    : null
+  const materialInfo = row.material
+    ? Array.isArray(row.material)
+      ? row.material[0] ?? null
+      : row.material
+    : null
   const sortedVariants = [...variants].sort((a, b) => {
     const orderA = a.display_order ?? 0
     const orderB = b.display_order ?? 0
@@ -188,8 +213,8 @@ function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
     isActive: Boolean(row.is_active),
     isFeatured: Boolean(row.is_featured),
     minOrderQuantity: row.min_order_quantity ?? undefined,
-    category: row.category ? { id: row.category.id, name: row.category.name } : null,
-    material: row.material ? { id: row.material.id, name: row.material.name } : null,
+    category: categoryInfo ? { id: categoryInfo.id, name: categoryInfo.name } : null,
+    material: materialInfo ? { id: materialInfo.id, name: materialInfo.name } : null,
     variantCount: variants.length,
     activeVariantCount: variants.filter((variant) => variant.is_active).length,
     thumbnailUrl: thumbnailSource?.main_image_url ?? null,
@@ -471,6 +496,7 @@ export async function fetchVariantsByTemplate(templateId: number, client?: Supab
         weight_grams,
         display_order,
         is_active,
+        is_bestseller,
         size_format:size_formats!product_variants_size_format_id_fkey (
           id,
           name,
@@ -509,15 +535,20 @@ export async function fetchVariantsByTemplate(templateId: number, client?: Supab
       mainImageUrl: variant.main_image_url ?? null,
       weightGrams: variant.weight_grams ?? null,
       isActive: Boolean(variant.is_active),
-      sizeFormat: variant.size_format
-        ? {
-            id: variant.size_format.id,
-            name: variant.size_format.name,
-            code: variant.size_format.code ?? null,
-            width_mm: variant.size_format.width_mm,
-            height_mm: variant.size_format.height_mm,
-          }
-        : null,
+      isBestseller: Boolean(variant.is_bestseller),
+      displayOrder: variant.display_order ?? null,
+      sizeFormat: (() => {
+        if (!variant.size_format) return null
+        const sizeFormatInfo = Array.isArray(variant.size_format) ? variant.size_format[0] : variant.size_format
+        if (!sizeFormatInfo) return null
+        return {
+          id: sizeFormatInfo.id,
+          name: sizeFormatInfo.name,
+          code: sizeFormatInfo.code ?? null,
+          width_mm: sizeFormatInfo.width_mm,
+          height_mm: sizeFormatInfo.height_mm,
+        }
+      })(),
       priceTierCount: variant.price_tiers?.length ?? 0,
       imageCount: variant.images?.length ?? 0,
     })) ?? []
@@ -553,6 +584,7 @@ export async function fetchVariantDetail(id: number, client?: SupabaseClient): P
         custom_height_mm,
         custom_depth_mm,
         is_active,
+        is_bestseller,
         size_format:size_formats!product_variants_size_format_id_fkey (
           id,
           name,
@@ -593,15 +625,20 @@ export async function fetchVariantDetail(id: number, client?: SupabaseClient): P
     mainImageUrl: data.main_image_url ?? null,
     weightGrams: data.weight_grams ?? null,
     isActive: Boolean(data.is_active),
-    sizeFormat: data.size_format
-      ? {
-          id: data.size_format.id,
-          name: data.size_format.name,
-          code: data.size_format.code ?? null,
-          width_mm: data.size_format.width_mm,
-          height_mm: data.size_format.height_mm,
-        }
-      : null,
+    isBestseller: Boolean(data.is_bestseller),
+    displayOrder: (data as { display_order?: number | null }).display_order ?? null,
+    sizeFormat: (() => {
+      if (!data.size_format) return null
+      const sizeFormatInfo = Array.isArray(data.size_format) ? data.size_format[0] : data.size_format
+      if (!sizeFormatInfo) return null
+      return {
+        id: sizeFormatInfo.id,
+        name: sizeFormatInfo.name,
+        code: sizeFormatInfo.code ?? null,
+        width_mm: sizeFormatInfo.width_mm,
+        height_mm: sizeFormatInfo.height_mm,
+      }
+    })(),
     priceTierCount: data.price_tiers?.length ?? 0,
     imageCount: data.images?.length ?? 0,
   } as VariantSummary

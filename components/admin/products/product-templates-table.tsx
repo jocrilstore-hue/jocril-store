@@ -98,7 +98,15 @@ export function ProductTemplatesTable({
   const [selection, setSelection] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    search: string
+    categoryId: string
+    materialId: string
+    status: ProductTemplateFilters["status"]
+    sort: ProductTemplateFilters["sort"]
+    page: number
+    pageSize: number
+  }>({
     search: initialFilters.search ?? "",
     categoryId: initialFilters.categoryId ? String(initialFilters.categoryId) : "",
     materialId: initialFilters.materialId ? String(initialFilters.materialId) : "",
@@ -358,7 +366,9 @@ export function ProductTemplatesTable({
               <label className="text-xs font-medium text-muted-foreground">Estado</label>
               <Select
                 value={filters.status}
-                onValueChange={(value) => setFilters((prev) => ({ ...prev, status: value, page: 1 }))}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, status: value as ProductTemplateFilters["status"], page: 1 }))
+                }
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Todos" />
@@ -374,7 +384,12 @@ export function ProductTemplatesTable({
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Ordenação</label>
-              <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value, page: 1 }))}>
+              <Select
+                value={filters.sort}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, sort: value as ProductTemplateFilters["sort"], page: 1 }))
+                }
+              >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>

@@ -273,14 +273,16 @@ export function ProductVariantFormEnhanced({
     let result
 
     if (mode === "create") {
-      result = await handleAsyncOperation(() => supabase.from("product_variants").insert(payload).select("id").single())
+      result = await handleAsyncOperation(async () =>
+        supabase.from("product_variants").insert(payload).select("id").single(),
+      )
 
-      if (result.success && result.data) {
+      if (result.success && result.data?.data) {
         toast({
           title: "Variante criada",
           description: "Já pode ajustar os restantes detalhes.",
         })
-        router.push(`/admin/products/${templateId}/variants/${result.data.id}/edit`)
+        router.push(`/admin/products/${templateId}/variants/${result.data.data.id}/edit`)
       } else if (result.error) {
         if (isUniqueViolation(result.error)) {
           toast({
@@ -293,7 +295,9 @@ export function ProductVariantFormEnhanced({
         }
       }
     } else if (variant?.id) {
-      result = await handleAsyncOperation(() => supabase.from("product_variants").update(payload).eq("id", variant.id))
+      result = await handleAsyncOperation(async () =>
+        supabase.from("product_variants").update(payload).eq("id", variant.id),
+      )
 
       if (result.success) {
         toast({

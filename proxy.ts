@@ -6,7 +6,7 @@ import { userHasAdminAccess, userHasAdminAccessDB } from "@/lib/auth/permissions
 const AUTH_CACHE_DURATION = 5000 // 5 seconds
 const authCache = new Map<string, { user: any; timestamp: number; isAdmin: boolean }>()
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })

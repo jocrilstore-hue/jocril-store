@@ -100,10 +100,29 @@ export default async function ProductsPage({
       .maybeSingle()
   ])
 
-  const products = productsResult.data ?? []
+  const rawProducts = productsResult.data ?? []
   const categories = categoriesResult.data ?? []
 
-  const productPrices = products.map((p) => p.base_price_including_vat)
+  const normalizedProducts = rawProducts.map((product) => {
+    const templateInfo = Array.isArray(product.product_templates)
+      ? product.product_templates[0]
+      : product.product_templates
+    const sizeFormat = Array.isArray(product.size_formats) ? product.size_formats[0] : product.size_formats
+
+    return {
+      ...product,
+      product_templates: {
+        name: templateInfo?.name ?? "Produto",
+        short_description: templateInfo?.short_description ?? "",
+        category_id: templateInfo?.category_id ?? "",
+      },
+      size_formats: {
+        name: sizeFormat?.name ?? "",
+      },
+    }
+  })
+
+  const productPrices = normalizedProducts.map((p) => p.base_price_including_vat)
   const derivedMinPrice = productPrices.length > 0 ? Math.min(...productPrices) : undefined
   const derivedMaxPrice = productPrices.length > 0 ? Math.max(...productPrices) : undefined
 
@@ -122,7 +141,7 @@ export default async function ProductsPage({
   return (
     <Suspense fallback={<ProductsLoadingSkeleton />}>
       <ProductsClient
-        initialProducts={products}
+        initialProducts={normalizedProducts}
         categories={categories}
         minPrice={minPrice}
         maxPrice={maxPrice}

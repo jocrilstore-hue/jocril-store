@@ -45,7 +45,7 @@ export default async function UsersPage() {
     id: user.id,
     email: user.email || "",
     created_at: user.created_at,
-    last_sign_in_at: user.last_sign_in_at,
+    last_sign_in_at: user.last_sign_in_at ?? null,
     roles: rolesMap.get(user.id) || [],
     is_admin: rolesMap.get(user.id)?.some((r) => r.role === "admin") || false,
   }))

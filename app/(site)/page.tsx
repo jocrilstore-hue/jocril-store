@@ -159,42 +159,47 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts.map((product) => (
-              <Link key={product.id} href={`/produtos/${product.url_slug}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full overflow-hidden pt-0">
-                  <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
-                    {product.main_image_url ? (
-                      <Image
-                        src={product.main_image_url || "/placeholder.svg"}
-                        alt={product.product_templates?.name || "Produto"}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-muted-foreground">Sem imagem</span>
-                      </div>
-                    )}
-                    {product.is_bestseller && <Badge className="absolute top-2 right-2 bg-primary">Mais Vendido</Badge>}
-                  </div>
-                  <CardContent className="pt-4">
-                    <CardTitle className="text-lg line-clamp-2">
-                      {product.product_templates?.name} - {product.size_formats?.name}
-                    </CardTitle>
-                    <CardDescription className="mt-2 line-clamp-2">
-                      {product.product_templates?.short_description}
-                    </CardDescription>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <div>
-                      <p className="text-2xl font-bold text-primary">{product.base_price_including_vat.toFixed(2)}€</p>
-                      <p className="text-xs text-muted-foreground">IVA incluído</p>
+            {featuredProducts.map((product) => {
+              const templateInfo = Array.isArray(product.product_templates)
+                ? product.product_templates[0]
+                : product.product_templates
+              const sizeFormat = Array.isArray(product.size_formats) ? product.size_formats[0] : product.size_formats
+
+              return (
+                <Link key={product.id} href={`/produtos/${product.url_slug}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full overflow-hidden pt-0">
+                    <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
+                      {product.main_image_url ? (
+                        <Image
+                          src={product.main_image_url || "/placeholder.svg"}
+                          alt={templateInfo?.name || "Produto"}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-muted-foreground">Sem imagem</span>
+                        </div>
+                      )}
+                      {product.is_bestseller && <Badge className="absolute top-2 right-2 bg-primary">Mais Vendido</Badge>}
                     </div>
-                    <Button>Ver Detalhes</Button>
-                  </CardFooter>
-                </Card>
-              </Link>
-            ))}
+                    <CardContent className="pt-4">
+                      <CardTitle className="text-lg line-clamp-2">
+                        {templateInfo?.name} {sizeFormat?.name ? `- ${sizeFormat.name}` : ""}
+                      </CardTitle>
+                      <CardDescription className="mt-2 line-clamp-2">{templateInfo?.short_description}</CardDescription>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center">
+                      <div>
+                        <p className="text-2xl font-bold text-primary">{product.base_price_including_vat.toFixed(2)}€</p>
+                        <p className="text-xs text-muted-foreground">IVA incluído</p>
+                      </div>
+                      <Button>Ver Detalhes</Button>
+                    </CardFooter>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         </div>
       </section>
