@@ -1,22 +1,141 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Flag, Lock, Truck } from "lucide-react"
-import { useCart } from "@/contexts/cart-context"
-import { useToast } from "@/hooks/use-toast"
-import { productFAQ } from "@/lib/product-faq"
+import { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Flag,
+  Lock,
+  Truck,
+  UtensilsCrossed,
+  Building2,
+  Store,
+  Briefcase,
+} from "lucide-react";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/hooks/use-toast";
+import type { ProductSpecifications } from "@/lib/types";
 
 interface ProductDetailProps {
-  currentVariant: any
-  allVariants: any[]
-  priceTiersByVariant: Record<number, any[]>
-  images: any[]
+  currentVariant: any;
+  allVariants: any[];
+  priceTiersByVariant: Record<number, any[]>;
+  images: any[];
+  templateImages?: any[];
+}
+
+// Helper to render a single specs table
+function SpecsTableSection({
+  title,
+  specs,
+}: {
+  title: string;
+  specs: { label: string; value: string | number | null }[];
+}) {
+  const filteredSpecs = specs.filter(
+    (s) => s.value !== null && s.value !== undefined && s.value !== "",
+  );
+  if (filteredSpecs.length === 0) return null;
+
+  return (
+    <div>
+      <h4
+        className="text-xs uppercase tracking-widest mb-4"
+        style={{ color: "var(--accent-100)" }}
+      >
+        {title}
+      </h4>
+      <table className="w-full">
+        <tbody>
+          {filteredSpecs.map((spec, index) => (
+            <tr
+              key={index}
+              className="border-b border-dashed border-[var(--color-base-500)]"
+            >
+              <td className="py-3 pr-4 text-sm text-muted-foreground w-1/2">
+                {spec.label}
+              </td>
+              <td className="py-3 text-sm text-foreground font-medium">
+                {typeof spec.value === "number"
+                  ? `${spec.value}mm`
+                  : spec.value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Component to display structured specifications
+function StructuredSpecifications({ specs }: { specs: ProductSpecifications }) {
+  const impressaoLabels: Record<string, string> = {
+    frente: "Só frente",
+    verso: "Só verso",
+    frente_verso: "Frente e verso",
+  };
+
+  const produtoSpecs = [
+    { label: "Largura", value: specs.produto?.largura_mm },
+    { label: "Altura", value: specs.produto?.altura_mm },
+    { label: "Profundidade", value: specs.produto?.profundidade_mm },
+  ];
+
+  const areaGraficaSpecs = [
+    { label: "Largura", value: specs.area_grafica?.largura_mm },
+    { label: "Altura", value: specs.area_grafica?.altura_mm },
+    {
+      label: "Formato",
+      value: specs.area_grafica?.formato,
+    },
+    {
+      label: "Impressão",
+      value: specs.area_grafica?.impressao
+        ? impressaoLabels[specs.area_grafica.impressao]
+        : null,
+    },
+    {
+      label: "Nº de cores",
+      value: specs.area_grafica?.num_cores
+        ? String(specs.area_grafica.num_cores)
+        : null,
+    },
+  ];
+
+  const extraSpecs =
+    specs.extras?.map((e) => ({ label: e.label, value: e.value })) || [];
+
+  return (
+    <div className="space-y-8">
+      <SpecsTableSection title="Produto" specs={produtoSpecs} />
+      <SpecsTableSection title="Área Gráfica" specs={areaGraficaSpecs} />
+      {extraSpecs.length > 0 && (
+        <SpecsTableSection title="Outras Características" specs={extraSpecs} />
+      )}
+      {specs.notas && (
+        <div>
+          <h4
+            className="text-xs uppercase tracking-widest mb-3"
+            style={{ color: "var(--accent-100)" }}
+          >
+            Notas
+          </h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {specs.notas}
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ProductDetail({
@@ -24,33 +143,54 @@ export default function ProductDetail({
   allVariants,
   priceTiersByVariant,
   images,
+  templateImages = [],
 }: ProductDetailProps) {
-  const router = useRouter()
-  const { addToCart } = useCart()
-  const { toast } = useToast()
-  const [selectedVariantId, setSelectedVariantId] = useState(currentVariant.id)
-  const [quantity, setQuantity] = useState(1)
+  const router = useRouter();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [selectedVariantId, setSelectedVariantId] = useState(currentVariant.id);
+  const [quantity, setQuantity] = useState(1);
 
-  const selectedVariant = allVariants.find((v) => v.id === selectedVariantId) || currentVariant
-  const priceTiers = priceTiersByVariant[selectedVariantId] || []
-  const template = currentVariant.product_templates
+  const selectedVariant =
+    allVariants.find((v) => v.id === selectedVariantId) || currentVariant;
+  const priceTiers = priceTiersByVariant[selectedVariantId] || [];
+  const template = currentVariant.product_templates;
+
+  // Get template images by type
+  const mainImage = templateImages.find((img) => img.image_type === "main");
+  const technicalImage = templateImages.find(
+    (img) => img.image_type === "technical",
+  );
+  const galleryImages = templateImages.filter(
+    (img) => img.image_type === "gallery",
+  );
+
+  // Determine the primary image to show (template main > variant main > placeholder)
+  const primaryImageUrl =
+    mainImage?.image_url ||
+    selectedVariant.main_image_url ||
+    "https://placehold.co/800x800?text=Imagem";
 
   const handleVariantChange = (variantId: number) => {
-    const variant = allVariants.find((v) => v.id === variantId)
+    const variant = allVariants.find((v) => v.id === variantId);
     if (variant) {
-      router.push(`/produtos/${variant.url_slug}`)
+      router.push(`/produtos/${variant.url_slug}`);
     }
-  }
+  };
 
   const getCurrentPrice = () => {
     if (priceTiers.length === 0) {
-      return selectedVariant.base_price_including_vat
+      return selectedVariant.base_price_including_vat;
     }
     const tier = priceTiers.find(
-      (t) => quantity >= t.min_quantity && (t.max_quantity === null || quantity <= t.max_quantity),
-    )
-    return tier ? tier.price_per_unit : selectedVariant.base_price_including_vat
-  }
+      (t) =>
+        quantity >= t.min_quantity &&
+        (t.max_quantity === null || quantity <= t.max_quantity),
+    );
+    return tier
+      ? tier.price_per_unit
+      : selectedVariant.base_price_including_vat;
+  };
 
   const handleAddToCart = () => {
     addToCart({
@@ -62,45 +202,48 @@ export default function ProductDetail({
       unitPrice: getCurrentPrice(),
       imageUrl: selectedVariant.main_image_url,
       stockQuantity: selectedVariant.stock_quantity,
-    })
+    });
 
     toast({
       title: "Produto adicionado ao carrinho",
       description: `${quantity}x ${template.name} - ${selectedVariant.size_formats.name}`,
-    })
+    });
 
-    setQuantity(1)
-  }
+    setQuantity(1);
+  };
 
-  const currentPrice = getCurrentPrice()
-  const totalPrice = currentPrice * quantity
+  const currentPrice = getCurrentPrice();
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-8 pt-20 pb-32">
-        <div className="grid grid-cols-2 gap-32">
+      <div className="container mx-auto px-4 lg:px-6 pt-8 pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery */}
-          <div className="lg:sticky lg:top-24 lg:h-fit">
-            <div className="relative w-full aspect-square bg-muted border border-border rounded-lg">
+          <div className="lg:sticky lg:top-8 lg:h-fit">
+            <div className="relative w-full aspect-square border border-dashed border-[var(--color-base-500)] rounded-[4px] overflow-hidden">
               <Image
-                src={selectedVariant.main_image_url || "https://placehold.co/800x800?text=Imagem"}
+                src={primaryImageUrl}
                 alt={template.name}
                 fill
-                className="object-cover rounded-lg"
+                className="object-cover"
               />
               {selectedVariant.is_bestseller && (
-                <Badge className="absolute top-4 right-4 bg-foreground text-background">Bestseller</Badge>
+                <Badge className="absolute top-3 right-3">Bestseller</Badge>
               )}
             </div>
-            {images && images.length > 0 && (
-              <div className="grid grid-cols-4 gap-4 mt-6">
-                {images.map((img) => (
-                  <div key={img.id} className="relative w-full aspect-square bg-muted border border-border cursor-pointer hover:border-foreground transition-colors rounded-lg">
+            {/* Show gallery images from template */}
+            {galleryImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                {galleryImages.map((img) => (
+                  <div
+                    key={`template-${img.id}`}
+                    className="relative w-full aspect-square border border-dashed border-[var(--color-base-500)] cursor-pointer hover:border-[var(--accent-100)] transition-colors rounded-[4px] overflow-hidden"
+                  >
                     <Image
-                      src={img.image_url || "https://placehold.co/200x200?text=Imagem"}
+                      src={img.image_url}
                       alt={img.alt_text || "Imagem"}
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover"
                     />
                   </div>
                 ))}
@@ -110,28 +253,41 @@ export default function ProductDetail({
 
           {/* Product Info */}
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight mb-3">{template.name}</h1>
-            <p className="text-xs text-muted-foreground mb-10">Ref.: {template.reference_code || selectedVariant.sku}</p>
+            <h1 className="text-2xl lg:text-3xl font-light text-foreground leading-tight mb-2">
+              {template.name}
+            </h1>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-6">
+              Ref.: {template.reference_code || selectedVariant.sku}
+            </p>
 
             {/* Price */}
-            <div style={{ color: "oklch(0.75 0.12 192)" }} className="text-3xl lg:text-4xl mb-3">
+            <div
+              className="text-2xl lg:text-3xl mb-1"
+              style={{ color: "var(--accent-100)" }}
+            >
               {currentPrice.toFixed(2)}€
             </div>
-            <p className="text-xs text-muted-foreground mb-10">Iva incluido</p>
+            <p className="text-xs text-muted-foreground mb-6">IVA incluído</p>
 
             {/* Size Selector */}
-            <div className="mb-10">
-              <p className="text-xs text-foreground mb-4">Dimensões:</p>
-              <div className="grid grid-cols-4 gap-4">
+            <div className="mb-5">
+              <p className="text-xs uppercase tracking-wide text-foreground mb-2">
+                Dimensões:
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {allVariants.map((variant) => (
                   <button
                     key={variant.id}
                     onClick={() => handleVariantChange(variant.id)}
-                    className={`py-4 px-4 text-xs border transition-all rounded-lg ${
+                    className={`h-8 px-3.5 text-xs font-normal uppercase tracking-wide transition-all rounded-[2px] bg-transparent text-foreground ${
                       variant.id === selectedVariantId
-                        ? "bg-foreground text-background border-foreground"
-                        : "bg-background text-foreground border-border hover:border-foreground"
+                        ? "border border-solid border-[var(--accent-100)]"
+                        : "border border-dashed border-[var(--color-base-500)] hover:border-[var(--accent-100)]"
                     }`}
+                    style={{
+                      fontFamily: "'Geist Mono', monospace",
+                      fontSize: "12px",
+                    }}
                   >
                     {variant.size_formats.name}
                   </button>
@@ -139,12 +295,12 @@ export default function ProductDetail({
               </div>
             </div>
 
-            {/* Quantity Selector + Carrinho Button (side by side) */}
-            <div className="flex gap-4 mb-4">
-              <div className="flex items-center border border-border h-12 rounded-lg">
+            {/* Quantity Selector + Price + Carrinho Button */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center border border-dashed border-[var(--color-base-500)] h-8 rounded-[2px]">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-full border-r border-border hover:bg-muted transition-colors text-center"
+                  className="w-8 h-full border-r border-dashed border-[var(--color-base-500)] hover:border-[var(--accent-100)] transition-colors text-center text-sm font-normal text-foreground"
                   disabled={quantity <= 1}
                 >
                   −
@@ -152,22 +308,38 @@ export default function ProductDetail({
                 <input
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Number.parseInt(e.target.value) || 1))}
-                  className="w-16 text-center bg-background border-none focus:outline-none text-sm"
+                  onChange={(e) =>
+                    setQuantity(
+                      Math.max(1, Number.parseInt(e.target.value) || 1),
+                    )
+                  }
+                  className="w-14 text-center bg-transparent border-none focus:outline-none text-xs font-normal text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   min="1"
                   max={selectedVariant.stock_quantity}
                 />
                 <button
-                  onClick={() => setQuantity(Math.min(quantity + 1, selectedVariant.stock_quantity))}
-                  className="w-12 h-full border-l border-border hover:bg-muted transition-colors text-center"
+                  onClick={() =>
+                    setQuantity(
+                      Math.min(quantity + 1, selectedVariant.stock_quantity),
+                    )
+                  }
+                  className="w-8 h-full border-l border-dashed border-[var(--color-base-500)] hover:border-[var(--accent-100)] transition-colors text-center text-sm font-normal text-foreground"
                   disabled={quantity >= selectedVariant.stock_quantity}
                 >
                   +
                 </button>
               </div>
 
+              {/* Current unit price based on quantity */}
+              <span
+                className="text-sm font-normal"
+                style={{ color: "var(--accent-100)" }}
+              >
+                {currentPrice.toFixed(2)}€/un
+              </span>
+
               <Button
-                className="flex-1 bg-foreground text-background hover:bg-foreground/90 h-12 text-xs rounded-lg"
+                className="flex-1 h-8 px-4 text-xs"
                 disabled={selectedVariant.stock_status === "out_of_stock"}
                 onClick={handleAddToCart}
               >
@@ -176,22 +348,31 @@ export default function ProductDetail({
             </div>
 
             {/* Solicitar Orçamento (full width) */}
-            <Button 
-              className="w-full bg-background text-foreground border border-foreground hover:bg-foreground hover:text-background h-12 text-xs mb-10 rounded-lg"
-              variant="outline"
-            >
+            <Button className="w-full h-9 mb-5 text-xs" variant="outline">
               Solicitar Orçamento
             </Button>
 
             {/* Quantity Discounts */}
             {priceTiers && priceTiers.length > 0 && (
-              <div className="mb-10 p-6 border border-dashed border-border rounded-lg">
-                <p className="text-base text-foreground mb-4">Descontos por quantidade:</p>
-                <div className="space-y-3">
-                  {priceTiers.map((tier) => (
-                    <div key={tier.id} className="flex justify-between items-center text-base pb-3 border-b border-dashed border-border last:border-b-0">
-                      <span className="text-muted-foreground">{tier.min_quantity} unidades</span>
-                      <span style={{ color: "oklch(0.75 0.12 192)" }}>{tier.price_per_unit.toFixed(2)}€</span>
+              <div className="mb-5 p-3 border border-dashed border-[var(--color-base-500)] rounded-[2px]">
+                <p className="text-xs uppercase tracking-wide text-foreground mb-2">
+                  Descontos por quantidade:
+                </p>
+                <div className="space-y-0">
+                  {priceTiers.map((tier, index) => (
+                    <div
+                      key={tier.id}
+                      className={`flex justify-between items-center h-8 px-3 transition-colors hover:bg-muted/50 ${index < priceTiers.length - 1 ? "border-b border-dashed border-[var(--color-base-500)]" : ""}`}
+                    >
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {tier.min_quantity} unidades
+                      </span>
+                      <span
+                        className="text-sm font-normal"
+                        style={{ color: "var(--accent-100)" }}
+                      >
+                        {tier.price_per_unit.toFixed(2)}€
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -199,247 +380,289 @@ export default function ProductDetail({
             )}
 
             {/* Info Grid */}
-            <div className="grid grid-cols-3 gap-8 pt-10 border-t border-border">
-              <div className="flex items-start gap-3 p-4 border border-border rounded-lg">
-                <Truck className="w-4 h-4 flex-shrink-0 mt-1" aria-hidden="true" />
+            <div className="grid grid-cols-3 gap-3 pt-6 border-t border-dashed border-[var(--color-base-500)]">
+              <div className="flex items-start gap-2 text-muted-foreground hover:text-[var(--accent-100)] transition-colors">
+                <Truck
+                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
                 <div>
-                  <p className="text-xs text-foreground">Envio</p>
-                  <p className="text-xs text-muted-foreground">Em 1-3 dias</p>
+                  <p className="text-xs uppercase tracking-wide">Envio</p>
+                  <p className="text-xs normal-case">1-3 dias</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 border border-border rounded-lg">
-                <Lock className="w-4 h-4 flex-shrink-0 mt-1" aria-hidden="true" />
+              <div className="flex items-start gap-2 text-muted-foreground hover:text-[var(--accent-100)] transition-colors">
+                <Lock
+                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
                 <div>
-                  <p className="text-xs text-foreground">Pagamento</p>
-                  <p className="text-xs text-muted-foreground">Seguro</p>
+                  <p className="text-xs uppercase tracking-wide">Pagamento</p>
+                  <p className="text-xs normal-case">Seguro</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 border border-border rounded-lg">
-                <Flag className="w-4 h-4 flex-shrink-0 mt-1" aria-hidden="true" />
+              <div className="flex items-start gap-2 text-muted-foreground hover:text-[var(--accent-100)] transition-colors">
+                <Flag
+                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
                 <div>
-                  <p className="text-xs text-foreground">Fabricado</p>
-                  <p className="text-xs text-muted-foreground">Em Portugal</p>
+                  <p className="text-xs uppercase tracking-wide">Fabricado</p>
+                  <p className="text-xs normal-case">Portugal</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs Section */}
-        <Tabs defaultValue="description" className="mt-32 mb-12">
-          <TabsList className="w-full">
-            <TabsTrigger value="description" className="uppercase text-xs tracking-wide">Descrição</TabsTrigger>
-            <TabsTrigger value="specs" className="uppercase text-xs tracking-wide">Especificações</TabsTrigger>
-            <TabsTrigger value="uses" className="uppercase text-xs tracking-wide">Onde Utilizar</TabsTrigger>
-            <TabsTrigger value="faq" className="uppercase text-xs tracking-wide">FAQ</TabsTrigger>
-          </TabsList>
+        {/* === STACKED SECTIONS === */}
 
-          <TabsContent value="description">
-            <div className="max-w-4xl">
-              {template.full_description ? (
-                <div className="prose max-w-none">
-                  <p className="text-foreground leading-relaxed whitespace-pre-wrap">{template.full_description}</p>
-                </div>
+        {/* SECTION 1: ESPECIFICAÇÕES TÉCNICAS (First and Key!) */}
+        <section className="mt-20 pt-16 border-t border-dashed border-[var(--color-base-500)]">
+          <div className="flex items-center gap-4 mb-10">
+            <span
+              className="text-xs uppercase tracking-widest"
+              style={{ color: "var(--accent-100)" }}
+            >
+              01
+            </span>
+            <h2 className="text-xl font-light text-foreground">
+              Especificações Técnicas
+            </h2>
+            <div
+              className="flex-1 h-px"
+              style={{ backgroundColor: "var(--color-base-500)" }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Technical Image - Left side, prominent */}
+            <div>
+              <div className="border border-dashed border-[var(--color-base-500)] rounded-[4px] p-6 bg-[var(--color-dark-base-primary)]">
+                {technicalImage ? (
+                  <Image
+                    src={technicalImage.image_url}
+                    alt="Diagrama técnico"
+                    width={800}
+                    height={600}
+                    className="w-full h-auto object-contain"
+                  />
+                ) : (
+                  <div className="aspect-[4/3] flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                        Diagrama Técnico
+                      </p>
+                      <p className="text-xs text-muted-foreground">Em breve</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Specifications Table - Right side */}
+            <div className="flex flex-col justify-center">
+              {template.specifications_json ? (
+                <StructuredSpecifications
+                  specs={template.specifications_json}
+                />
               ) : (
-                <p className="text-muted-foreground leading-relaxed">Descrição completa em breve.</p>
+                <p className="text-muted-foreground text-sm">
+                  Especificações em breve.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2: DESCRIÇÃO + FAQ Side by Side */}
+        <section className="mt-20 pt-16 border-t border-dashed border-[var(--color-base-500)]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+            {/* Left: Descrição */}
+            <div>
+              <div className="flex items-center gap-4 mb-8">
+                <span
+                  className="text-xs uppercase tracking-widest"
+                  style={{ color: "var(--accent-100)" }}
+                >
+                  02
+                </span>
+                <h2 className="text-xl font-light text-foreground">
+                  Descrição
+                </h2>
+                <div
+                  className="flex-1 h-px"
+                  style={{ backgroundColor: "var(--color-base-500)" }}
+                />
+              </div>
+
+              {template.full_description ? (
+                <div
+                  className="text-sm leading-relaxed text-foreground prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: template.full_description,
+                  }}
+                />
+              ) : (
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                  Descrição completa em breve.
+                </p>
               )}
 
               {template.advantages && (
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4 text-foreground">Vantagens</h3>
-                  <div className="prose max-w-none">
-                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">{template.advantages}</p>
-                  </div>
+                <div className="mt-8 p-5 border border-dashed border-[var(--color-base-500)] rounded-[4px]">
+                  <h3
+                    className="text-xs uppercase tracking-widest mb-3"
+                    style={{ color: "var(--accent-100)" }}
+                  >
+                    Vantagens
+                  </h3>
+                  <div
+                    className="text-sm leading-relaxed text-foreground"
+                    dangerouslySetInnerHTML={{ __html: template.advantages }}
+                  />
                 </div>
               )}
             </div>
-          </TabsContent>
 
-          <TabsContent value="specs">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-              {/* Specifications List */}
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold mb-8 text-foreground">Especificações Técnicas</h3>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Material</span>
-                    <span className="text-foreground">Acrílico cristal de alta qualidade</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Formato</span>
-                    <span className="text-foreground">{selectedVariant.size_formats.name}</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Dimensões</span>
-                    <span className="text-foreground">
-                      {selectedVariant.size_formats.width_mm} × {selectedVariant.size_formats.height_mm} mm
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Orientação</span>
-                    <span className="text-foreground capitalize">{selectedVariant.orientation || "Vertical"}</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Visibilidade</span>
-                    <span className="text-foreground">Dupla face</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Espessura</span>
-                    <span className="text-foreground">3 mm</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline border-b border-dashed border-border pb-4">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Peso</span>
-                    <span className="text-foreground">120 g</span>
-                  </div>
-                  <div className="grid grid-cols-[200px_1fr] gap-8 items-baseline">
-                    <span className="text-xs uppercase tracking-wide font-semibold text-foreground">Acabamento</span>
-                    <span className="text-foreground">Polido em todas as arestas</span>
-                  </div>
-                </div>
+            {/* Right: FAQ */}
+            <div>
+              <div className="flex items-center gap-4 mb-8">
+                <span
+                  className="text-xs uppercase tracking-widest"
+                  style={{ color: "var(--accent-100)" }}
+                >
+                  03
+                </span>
+                <h2 className="text-xl font-light text-foreground">
+                  Perguntas Frequentes
+                </h2>
+                <div
+                  className="flex-1 h-px"
+                  style={{ backgroundColor: "var(--color-base-500)" }}
+                />
               </div>
 
-              {/* Technical Image Placeholder */}
-              <div className="flex items-start justify-center lg:sticky lg:top-24 lg:h-fit">
-                <div className="w-full aspect-square bg-muted border border-dashed border-border rounded-lg flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Diagrama Técnico</p>
-                    <p className="text-sm text-muted-foreground">Imagem técnica em breve</p>
-                  </div>
-                </div>
-              </div>
+              {template.faq && template.faq.length > 0 ? (
+                <Accordion type="single" collapsible className="w-full">
+                  {template.faq.map(
+                    (
+                      faq: { question: string; answer: string },
+                      index: number,
+                    ) => (
+                      <AccordionItem
+                        key={index}
+                        value={`faq-${index}`}
+                        className="border-b border-dashed border-[var(--color-base-500)]"
+                      >
+                        <AccordionTrigger className="text-sm text-foreground hover:no-underline hover:text-[var(--accent-100)] text-left py-4">
+                          {faq.question}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-muted-foreground leading-relaxed pb-2">
+                            {faq.answer}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ),
+                  )}
+                </Accordion>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Sem perguntas frequentes disponíveis.
+                </p>
+              )}
             </div>
-          </TabsContent>
+          </div>
+        </section>
 
-          <TabsContent value="uses">
-            <div className="max-w-4xl">
-              <h3 className="text-2xl font-semibold mb-8 text-foreground">Aplicações Profissionais</h3>
-              <Accordion type="multiple" className="w-full">
-                <AccordionItem value="restaurants">
-                  <AccordionTrigger className="text-base font-semibold text-foreground uppercase tracking-wide hover:no-underline">
-                    Restaurantes e Cafés
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-3 text-foreground pl-4">
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Menus de mesa</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Carta de vinhos</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Promoções do dia</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Menu de sobremesas</span>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
+        {/* SECTION 3: APLICAÇÕES */}
+        <section className="mt-20 pt-16 border-t border-dashed border-[var(--color-base-500)]">
+          <div className="flex items-center gap-4 mb-10">
+            <span
+              className="text-xs uppercase tracking-widest"
+              style={{ color: "var(--accent-100)" }}
+            >
+              04
+            </span>
+            <h2 className="text-xl font-light text-foreground">Aplicações</h2>
+            <div
+              className="flex-1 h-px"
+              style={{ backgroundColor: "var(--color-base-500)" }}
+            />
+          </div>
 
-                <AccordionItem value="hotel">
-                  <AccordionTrigger className="text-base font-semibold text-foreground uppercase tracking-wide hover:no-underline">
-                    Hotelaria
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-3 text-foreground pl-4">
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Informações de quarto</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Serviços disponíveis</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Horários</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Contactos úteis</span>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="retail">
-                  <AccordionTrigger className="text-base font-semibold text-foreground uppercase tracking-wide hover:no-underline">
-                    Comércio
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-3 text-foreground pl-4">
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Preçários</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Características de produtos</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Promoções</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Novidades</span>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="offices">
-                  <AccordionTrigger className="text-base font-semibold text-foreground uppercase tracking-wide hover:no-underline">
-                    Escritórios
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-3 text-foreground pl-4">
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Recepção</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Salas de reunião</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Avisos internos</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <span>Directórios</span>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card: Restaurantes */}
+            <div className="group p-6 border border-dashed border-[var(--color-base-500)] rounded-[4px] hover:border-[var(--accent-100)] transition-colors">
+              <UtensilsCrossed
+                className="w-6 h-6 mb-4 text-muted-foreground group-hover:text-[var(--accent-100)] transition-colors"
+                strokeWidth={1.5}
+              />
+              <h4 className="text-sm uppercase tracking-wide text-foreground mb-3">
+                Restaurantes
+              </h4>
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li>Menus de mesa</li>
+                <li>Carta de vinhos</li>
+                <li>Promoções do dia</li>
+                <li>Menu de sobremesas</li>
+              </ul>
             </div>
-          </TabsContent>
 
-          <TabsContent value="faq">
-            <div className="max-w-4xl">
-              <h3 className="text-2xl font-semibold mb-8 text-foreground">Perguntas Frequentes</h3>
-              <Accordion type="single" collapsible className="w-full">
-                {productFAQ.map((faq, index) => (
-                  <AccordionItem key={index} value={`faq-${index}`}>
-                    <AccordionTrigger className="text-base font-semibold text-foreground uppercase tracking-wide hover:no-underline text-left">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="text-foreground leading-relaxed">{faq.answer}</p>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+            {/* Card: Hotelaria */}
+            <div className="group p-6 border border-dashed border-[var(--color-base-500)] rounded-[4px] hover:border-[var(--accent-100)] transition-colors">
+              <Building2
+                className="w-6 h-6 mb-4 text-muted-foreground group-hover:text-[var(--accent-100)] transition-colors"
+                strokeWidth={1.5}
+              />
+              <h4 className="text-sm uppercase tracking-wide text-foreground mb-3">
+                Hotelaria
+              </h4>
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li>Informações de quarto</li>
+                <li>Serviços disponíveis</li>
+                <li>Horários</li>
+                <li>Contactos úteis</li>
+              </ul>
             </div>
-          </TabsContent>
-        </Tabs>
+
+            {/* Card: Comércio */}
+            <div className="group p-6 border border-dashed border-[var(--color-base-500)] rounded-[4px] hover:border-[var(--accent-100)] transition-colors">
+              <Store
+                className="w-6 h-6 mb-4 text-muted-foreground group-hover:text-[var(--accent-100)] transition-colors"
+                strokeWidth={1.5}
+              />
+              <h4 className="text-sm uppercase tracking-wide text-foreground mb-3">
+                Comércio
+              </h4>
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li>Preçários</li>
+                <li>Características</li>
+                <li>Promoções</li>
+                <li>Novidades</li>
+              </ul>
+            </div>
+
+            {/* Card: Escritórios */}
+            <div className="group p-6 border border-dashed border-[var(--color-base-500)] rounded-[4px] hover:border-[var(--accent-100)] transition-colors">
+              <Briefcase
+                className="w-6 h-6 mb-4 text-muted-foreground group-hover:text-[var(--accent-100)] transition-colors"
+                strokeWidth={1.5}
+              />
+              <h4 className="text-sm uppercase tracking-wide text-foreground mb-3">
+                Escritórios
+              </h4>
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li>Recepção</li>
+                <li>Salas de reunião</li>
+                <li>Avisos internos</li>
+                <li>Directórios</li>
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
-  )
+  );
 }

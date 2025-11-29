@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
-import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Heading1, Heading2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useEffect, useRef } from "react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Link as LinkIcon,
+  Heading1,
+  Heading2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const COMMANDS = [
   { icon: Bold, label: "Negrito", command: "bold" },
@@ -13,42 +22,65 @@ const COMMANDS = [
   { icon: Heading2, label: "Título 2", command: "formatBlock", argument: "h2" },
   { icon: List, label: "Lista", command: "insertUnorderedList" },
   { icon: ListOrdered, label: "Lista numerada", command: "insertOrderedList" },
-]
+];
 
 interface RichTextEditorProps {
-  value?: string | null
-  onChange?: (value: string) => void
-  placeholder?: string
-  className?: string
-  name?: string
+  value?: string | null;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  name?: string;
 }
 
-export function RichTextEditor({ value, onChange, placeholder, className, name }: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null)
+export function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+  className,
+  name,
+}: RichTextEditorProps) {
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (editorRef.current && typeof value === "string" && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || ""
+    if (
+      editorRef.current &&
+      typeof value === "string" &&
+      value !== editorRef.current.innerHTML
+    ) {
+      editorRef.current.innerHTML = value || "";
     }
-  }, [value])
+  }, [value]);
+
+  const stripInlineStyles = (html: string): string => {
+    // Remove ALL inline styling - only structural HTML should be saved
+    // This ensures text inherits from global CSS styles
+    return html
+      .replace(/<font[^>]*>/gi, "")
+      .replace(/<\/font>/gi, "")
+      .replace(/ style="[^"]*"/gi, "")
+      .replace(/ color="[^"]*"/gi, "")
+      .replace(/ face="[^"]*"/gi, "")
+      .replace(/ size="[^"]*"/gi, "");
+  };
 
   const handleInput = () => {
-    if (!editorRef.current) return
-    onChange?.(editorRef.current.innerHTML)
-  }
+    if (!editorRef.current) return;
+    const cleanHtml = stripInlineStyles(editorRef.current.innerHTML);
+    onChange?.(cleanHtml);
+  };
 
   const runCommand = (command: string, argument?: string) => {
     if (command === "createLink") {
-      const url = prompt("Insira o URL")
-      if (!url) return
-      document.execCommand("createLink", false, url)
+      const url = prompt("Insira o URL");
+      if (!url) return;
+      document.execCommand("createLink", false, url);
     } else if (command === "formatBlock" && argument) {
-      document.execCommand("formatBlock", false, argument)
+      document.execCommand("formatBlock", false, argument);
     } else {
-      document.execCommand(command, false, argument ?? "")
+      document.execCommand(command, false, argument ?? "");
     }
-    handleInput()
-  }
+    handleInput();
+  };
 
   return (
     <div className={cn("rounded-lg border bg-background", className)}>
@@ -62,8 +94,8 @@ export function RichTextEditor({ value, onChange, placeholder, className, name }
             className="h-8 w-8"
             title={item.label}
             onClick={(event) => {
-              event.preventDefault()
-              runCommand(item.command, item.argument)
+              event.preventDefault();
+              runCommand(item.command, item.argument);
             }}
           >
             <item.icon className="h-3.5 w-3.5" />
@@ -76,8 +108,8 @@ export function RichTextEditor({ value, onChange, placeholder, className, name }
           className="h-8 w-8"
           title="Inserir link"
           onClick={(event) => {
-            event.preventDefault()
-            runCommand("createLink")
+            event.preventDefault();
+            runCommand("createLink");
           }}
         >
           <LinkIcon className="h-3.5 w-3.5" />
@@ -86,15 +118,24 @@ export function RichTextEditor({ value, onChange, placeholder, className, name }
       <div
         ref={editorRef}
         className={cn(
-          "min-h-[160px] resize-y overflow-auto px-4 py-3 text-sm focus:outline-none",
+          "min-h-[160px] resize-y overflow-auto px-4 py-3 text-sm focus:outline-none text-foreground",
           "[&:empty::before]:pointer-events-none [&:empty::before]:text-sm [&:empty::before]:text-muted-foreground [&:empty::before]:content-[attr(data-placeholder)]",
+          "[&_a]:text-foreground [&_u]:text-foreground [&_*]:text-foreground",
         )}
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder ?? ""}
         onInput={handleInput}
       />
-      {name && <textarea name={name} className="sr-only" value={value ?? ""} readOnly aria-hidden />}
+      {name && (
+        <textarea
+          name={name}
+          className="sr-only"
+          value={value ?? ""}
+          readOnly
+          aria-hidden
+        />
+      )}
     </div>
-  )
+  );
 }

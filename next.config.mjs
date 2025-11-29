@@ -6,12 +6,12 @@ const nextConfig = {
   },
   images: {
     // Use Next.js image optimization in production for better performance
-    unoptimized: process.env.NODE_ENV === 'development',
-    formats: ['image/avif', 'image/webp'],
+    unoptimized: process.env.NODE_ENV === "development",
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'hebbkx1anhila5yf.public.blob.vercel-storage.com',
+        protocol: "https",
+        hostname: "hebbkx1anhila5yf.public.blob.vercel-storage.com",
       },
     ],
   },
@@ -20,15 +20,18 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  // Allow cross-origin requests from local network devices
+  allowedDevOrigins: ["192.168.1.209"],
+
   // Turbopack configuration for Next.js 16
   turbopack: {
     // Configure root to avoid lockfile warnings
     root: process.cwd(),
     // SVG loader configuration for Turbopack
     rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
@@ -39,8 +42,8 @@ const nextConfig = {
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
-      use: ['@svgr/webpack'],
-    })
+      use: ["@svgr/webpack"],
+    });
 
     // Tree shaking for better bundle size
     if (!isServer) {
@@ -48,12 +51,11 @@ const nextConfig = {
         ...config.optimization,
         usedExports: true,
         sideEffects: false,
-      }
+      };
     }
 
-    return config
+    return config;
   },
+};
 
-}
-
-export default nextConfig
+export default nextConfig;

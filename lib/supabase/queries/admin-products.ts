@@ -1,8 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
-import { createClient } from "@/lib/supabase/server"
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import type { ProductTemplateImage, ProductSpecifications } from "@/lib/types";
 
-const DEFAULT_PAGE_SIZE = 20
-const MAX_PAGE_SIZE = 100
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 export type ProductTemplateSort =
   | "name-asc"
@@ -10,197 +11,205 @@ export type ProductTemplateSort =
   | "updated-desc"
   | "updated-asc"
   | "order-asc"
-  | "order-desc"
+  | "order-desc";
 
-export type ProductTemplateStatusFilter = "all" | "active" | "inactive" | "featured"
+export type ProductTemplateStatusFilter =
+  | "all"
+  | "active"
+  | "inactive"
+  | "featured";
 
 export interface ProductTemplateFilters {
-  search?: string
-  categoryId?: number
-  materialId?: number
-  status?: ProductTemplateStatusFilter
-  page?: number
-  pageSize?: number
-  sort?: ProductTemplateSort
+  search?: string;
+  categoryId?: number;
+  materialId?: number;
+  status?: ProductTemplateStatusFilter;
+  page?: number;
+  pageSize?: number;
+  sort?: ProductTemplateSort;
 }
 
 type RawTemplateRow = {
-  id: number
-  name: string
-  slug: string
-  reference_code?: string | null
-  created_at?: string | null
-  updated_at: string | null
-  display_order?: number | null
-  is_active?: boolean | null
-  is_featured?: boolean | null
-  min_order_quantity?: number | null
+  id: number;
+  name: string;
+  slug: string;
+  reference_code?: string | null;
+  created_at?: string | null;
+  updated_at: string | null;
+  display_order?: number | null;
+  is_active?: boolean | null;
+  is_featured?: boolean | null;
+  min_order_quantity?: number | null;
   category?:
     | {
-        id: number
-        name: string
-        slug?: string | null
+        id: number;
+        name: string;
+        slug?: string | null;
       }
     | Array<{
-        id: number
-        name: string
-        slug?: string | null
+        id: number;
+        name: string;
+        slug?: string | null;
       }>
-    | null
+    | null;
   material?:
     | {
-        id: number
-        name: string
+        id: number;
+        name: string;
       }
     | Array<{
-        id: number
-        name: string
+        id: number;
+        name: string;
       }>
-    | null
+    | null;
   variants?: Array<{
-    id: number
-    is_active?: boolean | null
-    main_image_url?: string | null
-    display_order?: number | null
-  }> | null
-}
+    id: number;
+    is_active?: boolean | null;
+    main_image_url?: string | null;
+    display_order?: number | null;
+  }> | null;
+};
 
 export interface ProductTemplateSummary {
-  id: number
-  name: string
-  slug: string
-  referenceCode?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
-  displayOrder?: number | null
-  isActive: boolean
-  isFeatured: boolean
-  minOrderQuantity?: number | null
-  category?: { id: number; name: string } | null
-  material?: { id: number; name: string } | null
-  variantCount: number
-  activeVariantCount: number
-  thumbnailUrl?: string | null
+  id: number;
+  name: string;
+  slug: string;
+  referenceCode?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  displayOrder?: number | null;
+  isActive: boolean;
+  isFeatured: boolean;
+  minOrderQuantity?: number | null;
+  category?: { id: number; name: string } | null;
+  material?: { id: number; name: string } | null;
+  variantCount: number;
+  activeVariantCount: number;
+  thumbnailUrl?: string | null;
 }
 
 export interface PaginatedProductTemplates {
-  items: ProductTemplateSummary[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
+  items: ProductTemplateSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface ProductTaxonomyData {
-  categories: Array<{ id: number; name: string }>
-  materials: Array<{ id: number; name: string }>
+  categories: Array<{ id: number; name: string }>;
+  materials: Array<{ id: number; name: string }>;
 }
 
 export interface ProductTemplateDetail extends ProductTemplateSummary {
-  categoryId?: number | null
-  materialId?: number | null
-  skuPrefix?: string | null
-  shortDescription?: string | null
-  fullDescription?: string | null
-  advantages?: string | null
-  specificationsText?: string | null
-  careInstructions?: string | null
-  faq?: Array<{ question: string; answer: string }>
-  isCustomizable?: boolean
-  isDoubleSided?: boolean
-  isAdhesive?: boolean
-  hasLock?: boolean
-  hasQuantityDiscounts?: boolean
-  orientation?: string | null
-  seoTitleTemplate?: string | null
-  seoDescriptionTemplate?: string | null
-  applications: number[]
+  categoryId?: number | null;
+  materialId?: number | null;
+  skuPrefix?: string | null;
+  shortDescription?: string | null;
+  fullDescription?: string | null;
+  advantages?: string | null;
+  specificationsText?: string | null;
+  specificationsJson?: ProductSpecifications | null;
+  careInstructions?: string | null;
+  faq?: Array<{ question: string; answer: string }>;
+  isCustomizable?: boolean;
+  isDoubleSided?: boolean;
+  isAdhesive?: boolean;
+  hasLock?: boolean;
+  hasQuantityDiscounts?: boolean;
+  orientation?: string | null;
+  seoTitleTemplate?: string | null;
+  seoDescriptionTemplate?: string | null;
+  applications: number[];
 }
 
 export interface ApplicationOption {
-  id: number
-  title: string
+  id: number;
+  title: string;
 }
 
 export interface SizeFormatOption {
-  id: number
-  name: string
-  code?: string | null
-  width_mm?: number | null
-  height_mm?: number | null
+  id: number;
+  name: string;
+  code?: string | null;
+  width_mm?: number | null;
+  height_mm?: number | null;
 }
 
 export interface VariantSummary {
-  id: number
-  productTemplateId: number
-  sizeFormatId?: number | null
-  sku: string
-  urlSlug: string
-  orientation?: string | null
-  basePriceExcludingVat: number
-  basePriceIncludingVat: number
-  costPrice?: number | null
-  stockQuantity?: number | null
-  stockStatus?: string | null
-  mainImageUrl?: string | null
-  weightGrams?: number | null
-  isActive: boolean
-  isBestseller?: boolean
-  displayOrder?: number | null
-  sizeFormat?: SizeFormatOption | null
-  priceTierCount: number
-  imageCount: number
+  id: number;
+  productTemplateId: number;
+  sizeFormatId?: number | null;
+  sku: string;
+  urlSlug: string;
+  orientation?: string | null;
+  basePriceExcludingVat: number;
+  basePriceIncludingVat: number;
+  costPrice?: number | null;
+  stockQuantity?: number | null;
+  stockStatus?: string | null;
+  mainImageUrl?: string | null;
+  weightGrams?: number | null;
+  isActive: boolean;
+  isBestseller?: boolean;
+  displayOrder?: number | null;
+  sizeFormat?: SizeFormatOption | null;
+  priceTierCount: number;
+  imageCount: number;
 }
 
 export interface ProductVariantDetail extends VariantSummary {
-  barcode?: string | null
-  specificDescription?: string | null
-  idealFor?: string | null
-  capacityDescription?: string | null
-  stockStatus?: string | null
-  lowStockThreshold?: number | null
-  restockDate?: string | null
-  customWidthMm?: number | null
-  customHeightMm?: number | null
-  customDepthMm?: number | null
-  stockQuantity?: number | null
+  barcode?: string | null;
+  specificDescription?: string | null;
+  idealFor?: string | null;
+  capacityDescription?: string | null;
+  stockStatus?: string | null;
+  lowStockThreshold?: number | null;
+  restockDate?: string | null;
+  customWidthMm?: number | null;
+  customHeightMm?: number | null;
+  customDepthMm?: number | null;
+  stockQuantity?: number | null;
 }
 
-const SORT_MAP: Record<ProductTemplateSort, { column: string; ascending: boolean }> = {
+const SORT_MAP: Record<
+  ProductTemplateSort,
+  { column: string; ascending: boolean }
+> = {
   "name-asc": { column: "name", ascending: true },
   "name-desc": { column: "name", ascending: false },
   "updated-desc": { column: "updated_at", ascending: false },
   "updated-asc": { column: "updated_at", ascending: true },
   "order-asc": { column: "display_order", ascending: true },
   "order-desc": { column: "display_order", ascending: false },
-}
+};
 
 function normalizeSort(sort?: ProductTemplateSort) {
   if (!sort) {
-    return SORT_MAP["order-asc"]
+    return SORT_MAP["order-asc"];
   }
-  return SORT_MAP[sort] ?? SORT_MAP["order-asc"]
+  return SORT_MAP[sort] ?? SORT_MAP["order-asc"];
 }
 
 function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
-  const variants = row.variants ?? []
+  const variants = row.variants ?? [];
   const categoryInfo = row.category
     ? Array.isArray(row.category)
-      ? row.category[0] ?? null
+      ? (row.category[0] ?? null)
       : row.category
-    : null
+    : null;
   const materialInfo = row.material
     ? Array.isArray(row.material)
-      ? row.material[0] ?? null
+      ? (row.material[0] ?? null)
       : row.material
-    : null
+    : null;
   const sortedVariants = [...variants].sort((a, b) => {
-    const orderA = a.display_order ?? 0
-    const orderB = b.display_order ?? 0
-    return orderA - orderB
-  })
-  const activeVariant = sortedVariants.find((variant) => variant.is_active)
-  const thumbnailSource = activeVariant ?? sortedVariants[0]
+    const orderA = a.display_order ?? 0;
+    const orderB = b.display_order ?? 0;
+    return orderA - orderB;
+  });
+  const activeVariant = sortedVariants.find((variant) => variant.is_active);
+  const thumbnailSource = activeVariant ?? sortedVariants[0];
 
   return {
     id: row.id,
@@ -213,32 +222,39 @@ function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
     isActive: Boolean(row.is_active),
     isFeatured: Boolean(row.is_featured),
     minOrderQuantity: row.min_order_quantity ?? undefined,
-    category: categoryInfo ? { id: categoryInfo.id, name: categoryInfo.name } : null,
-    material: materialInfo ? { id: materialInfo.id, name: materialInfo.name } : null,
+    category: categoryInfo
+      ? { id: categoryInfo.id, name: categoryInfo.name }
+      : null,
+    material: materialInfo
+      ? { id: materialInfo.id, name: materialInfo.name }
+      : null,
     variantCount: variants.length,
     activeVariantCount: variants.filter((variant) => variant.is_active).length,
     thumbnailUrl: thumbnailSource?.main_image_url ?? null,
-  }
+  };
 }
 
 async function resolveClient(client?: SupabaseClient) {
   if (client) {
-    return client
+    return client;
   }
-  return createClient()
+  return createClient();
 }
 
 export async function fetchAdminProductTemplates(
   filters: ProductTemplateFilters,
   client?: SupabaseClient,
 ): Promise<PaginatedProductTemplates> {
-  const supabase = await resolveClient(client)
-  const page = Math.max(1, filters.page ?? 1)
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, filters.pageSize ?? DEFAULT_PAGE_SIZE))
-  const from = (page - 1) * pageSize
-  const to = from + pageSize - 1
+  const supabase = await resolveClient(client);
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, filters.pageSize ?? DEFAULT_PAGE_SIZE),
+  );
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  const { column, ascending } = normalizeSort(filters.sort)
+  const { column, ascending } = normalizeSort(filters.sort);
 
   let query = supabase
     .from("product_templates")
@@ -273,37 +289,37 @@ export async function fetchAdminProductTemplates(
     )
     .range(from, to)
     .order(column, { ascending, nullsFirst: true })
-    .order("name", { ascending: true })
+    .order("name", { ascending: true });
 
   if (filters.search) {
-    const like = `%${filters.search}%`
-    query = query.or(`name.ilike.${like},reference_code.ilike.${like}`)
+    const like = `%${filters.search}%`;
+    query = query.or(`name.ilike.${like},reference_code.ilike.${like}`);
   }
 
   if (filters.categoryId) {
-    query = query.eq("category_id", filters.categoryId)
+    query = query.eq("category_id", filters.categoryId);
   }
 
   if (filters.materialId) {
-    query = query.eq("material_id", filters.materialId)
+    query = query.eq("material_id", filters.materialId);
   }
 
   if (filters.status === "active") {
-    query = query.eq("is_active", true)
+    query = query.eq("is_active", true);
   } else if (filters.status === "inactive") {
-    query = query.eq("is_active", false)
+    query = query.eq("is_active", false);
   } else if (filters.status === "featured") {
-    query = query.eq("is_featured", true)
+    query = query.eq("is_featured", true);
   }
 
-  const { data, error, count } = await query
+  const { data, error, count } = await query;
 
   if (error) {
-    throw error
+    throw error;
   }
 
-  const total = count ?? 0
-  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 1
+  const total = count ?? 0;
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 1;
 
   return {
     items: (data ?? []).map(mapTemplateRow),
@@ -311,11 +327,13 @@ export async function fetchAdminProductTemplates(
     page,
     pageSize,
     totalPages,
-  }
+  };
 }
 
-export async function fetchProductTaxonomies(client?: SupabaseClient): Promise<ProductTaxonomyData> {
-  const supabase = await resolveClient(client)
+export async function fetchProductTaxonomies(
+  client?: SupabaseClient,
+): Promise<ProductTaxonomyData> {
+  const supabase = await resolveClient(client);
 
   const [categoriesResult, materialsResult] = await Promise.all([
     supabase
@@ -328,45 +346,55 @@ export async function fetchProductTaxonomies(client?: SupabaseClient): Promise<P
       .select("id, name")
       .eq("is_active", true)
       .order("name", { ascending: true }),
-  ])
+  ]);
 
   if (categoriesResult.error) {
-    throw categoriesResult.error
+    throw categoriesResult.error;
   }
 
   if (materialsResult.error) {
-    throw materialsResult.error
+    throw materialsResult.error;
   }
 
   return {
     categories: categoriesResult.data ?? [],
     materials: materialsResult.data ?? [],
-  }
+  };
 }
 
-export async function fetchApplications(client?: SupabaseClient): Promise<ApplicationOption[]> {
-  const supabase = await resolveClient(client)
-  const { data, error } = await supabase.from("applications").select("id, title").order("title", { ascending: true })
+export async function fetchApplications(
+  client?: SupabaseClient,
+): Promise<ApplicationOption[]> {
+  const supabase = await resolveClient(client);
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, title")
+    .order("title", { ascending: true });
   if (error) {
-    throw error
+    throw error;
   }
-  return data ?? []
+  return data ?? [];
 }
 
-export async function fetchSizeFormats(client?: SupabaseClient): Promise<SizeFormatOption[]> {
-  const supabase = await resolveClient(client)
+export async function fetchSizeFormats(
+  client?: SupabaseClient,
+): Promise<SizeFormatOption[]> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("size_formats")
     .select("id, name, code, width_mm, height_mm")
-    .order("name", { ascending: true })
+    .order("name", { ascending: true });
   if (error) {
-    throw error
+    throw error;
   }
-  return data ?? []
+  return data ?? [];
 }
 
-export async function fetchProductTemplateDetail(id: number, client?: SupabaseClient): Promise<ProductTemplateDetail | null> {
-  const supabase = await resolveClient(client)
+export async function fetchProductTemplateDetail(
+  id: number,
+  client?: SupabaseClient,
+): Promise<ProductTemplateDetail | null> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("product_templates")
     .select(
@@ -382,6 +410,7 @@ export async function fetchProductTemplateDetail(id: number, client?: SupabaseCl
         full_description,
         advantages,
         specifications_text,
+        specifications_json,
         care_instructions,
         faq,
         is_active,
@@ -414,43 +443,44 @@ export async function fetchProductTemplateDetail(id: number, client?: SupabaseCl
       `,
     )
     .eq("id", id)
-    .single()
+    .single();
 
   if (error) {
     if (error.code === "PGRST116") {
-      return null
+      return null;
     }
-    throw error
+    throw error;
   }
 
   const { data: applicationLinks, error: applicationsError } = await supabase
     .from("product_applications")
     .select("application_id")
-    .eq("product_template_id", id)
+    .eq("product_template_id", id);
 
   if (applicationsError) {
-    throw applicationsError
+    throw applicationsError;
   }
 
   const template = data as RawTemplateRow & {
-    sku_prefix?: string | null
-    short_description?: string | null
-    full_description?: string | null
-    advantages?: string | null
-    specifications_text?: string | null
-    care_instructions?: string | null
-    faq?: Array<{ question: string; answer: string }> | null
-    is_customizable?: boolean | null
-    is_double_sided?: boolean | null
-    is_adhesive?: boolean | null
-    has_lock?: boolean | null
-    has_quantity_discounts?: boolean | null
-    orientation?: string | null
-    seo_title_template?: string | null
-    seo_description_template?: string | null
-    category_id?: number | null
-    material_id?: number | null
-  }
+    sku_prefix?: string | null;
+    short_description?: string | null;
+    full_description?: string | null;
+    advantages?: string | null;
+    specifications_text?: string | null;
+    specifications_json?: ProductSpecifications | null;
+    care_instructions?: string | null;
+    faq?: Array<{ question: string; answer: string }> | null;
+    is_customizable?: boolean | null;
+    is_double_sided?: boolean | null;
+    is_adhesive?: boolean | null;
+    has_lock?: boolean | null;
+    has_quantity_discounts?: boolean | null;
+    orientation?: string | null;
+    seo_title_template?: string | null;
+    seo_description_template?: string | null;
+    category_id?: number | null;
+    material_id?: number | null;
+  };
 
   return {
     ...mapTemplateRow(template),
@@ -461,6 +491,7 @@ export async function fetchProductTemplateDetail(id: number, client?: SupabaseCl
     fullDescription: template.full_description ?? null,
     advantages: template.advantages ?? null,
     specificationsText: template.specifications_text ?? null,
+    specificationsJson: template.specifications_json ?? null,
     careInstructions: template.care_instructions ?? null,
     faq: template.faq ?? undefined,
     isCustomizable: Boolean(template.is_customizable),
@@ -472,11 +503,14 @@ export async function fetchProductTemplateDetail(id: number, client?: SupabaseCl
     seoTitleTemplate: template.seo_title_template ?? null,
     seoDescriptionTemplate: template.seo_description_template ?? null,
     applications: (applicationLinks ?? []).map((item) => item.application_id),
-  }
+  };
 }
 
-export async function fetchVariantsByTemplate(templateId: number, client?: SupabaseClient): Promise<VariantSummary[]> {
-  const supabase = await resolveClient(client)
+export async function fetchVariantsByTemplate(
+  templateId: number,
+  client?: SupabaseClient,
+): Promise<VariantSummary[]> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("product_variants")
     .select(
@@ -513,10 +547,10 @@ export async function fetchVariantsByTemplate(templateId: number, client?: Supab
       `,
     )
     .eq("product_template_id", templateId)
-    .order("display_order", { ascending: true })
+    .order("display_order", { ascending: true });
 
   if (error) {
-    throw error
+    throw error;
   }
 
   return (
@@ -538,25 +572,30 @@ export async function fetchVariantsByTemplate(templateId: number, client?: Supab
       isBestseller: Boolean(variant.is_bestseller),
       displayOrder: variant.display_order ?? null,
       sizeFormat: (() => {
-        if (!variant.size_format) return null
-        const sizeFormatInfo = Array.isArray(variant.size_format) ? variant.size_format[0] : variant.size_format
-        if (!sizeFormatInfo) return null
+        if (!variant.size_format) return null;
+        const sizeFormatInfo = Array.isArray(variant.size_format)
+          ? variant.size_format[0]
+          : variant.size_format;
+        if (!sizeFormatInfo) return null;
         return {
           id: sizeFormatInfo.id,
           name: sizeFormatInfo.name,
           code: sizeFormatInfo.code ?? null,
           width_mm: sizeFormatInfo.width_mm,
           height_mm: sizeFormatInfo.height_mm,
-        }
+        };
       })(),
       priceTierCount: variant.price_tiers?.length ?? 0,
       imageCount: variant.images?.length ?? 0,
     })) ?? []
-  )
+  );
 }
 
-export async function fetchVariantDetail(id: number, client?: SupabaseClient): Promise<ProductVariantDetail | null> {
-  const supabase = await resolveClient(client)
+export async function fetchVariantDetail(
+  id: number,
+  client?: SupabaseClient,
+): Promise<ProductVariantDetail | null> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("product_variants")
     .select(
@@ -601,13 +640,13 @@ export async function fetchVariantDetail(id: number, client?: SupabaseClient): P
       `,
     )
     .eq("id", id)
-    .single()
+    .single();
 
   if (error) {
     if (error.code === "PGRST116") {
-      return null
+      return null;
     }
-    throw error
+    throw error;
   }
 
   const summary = {
@@ -626,22 +665,25 @@ export async function fetchVariantDetail(id: number, client?: SupabaseClient): P
     weightGrams: data.weight_grams ?? null,
     isActive: Boolean(data.is_active),
     isBestseller: Boolean(data.is_bestseller),
-    displayOrder: (data as { display_order?: number | null }).display_order ?? null,
+    displayOrder:
+      (data as { display_order?: number | null }).display_order ?? null,
     sizeFormat: (() => {
-      if (!data.size_format) return null
-      const sizeFormatInfo = Array.isArray(data.size_format) ? data.size_format[0] : data.size_format
-      if (!sizeFormatInfo) return null
+      if (!data.size_format) return null;
+      const sizeFormatInfo = Array.isArray(data.size_format)
+        ? data.size_format[0]
+        : data.size_format;
+      if (!sizeFormatInfo) return null;
       return {
         id: sizeFormatInfo.id,
         name: sizeFormatInfo.name,
         code: sizeFormatInfo.code ?? null,
         width_mm: sizeFormatInfo.width_mm,
         height_mm: sizeFormatInfo.height_mm,
-      }
+      };
     })(),
     priceTierCount: data.price_tiers?.length ?? 0,
     imageCount: data.images?.length ?? 0,
-  } as VariantSummary
+  } as VariantSummary;
 
   return {
     ...summary,
@@ -654,5 +696,37 @@ export async function fetchVariantDetail(id: number, client?: SupabaseClient): P
     customWidthMm: data.custom_width_mm ?? null,
     customHeightMm: data.custom_height_mm ?? null,
     customDepthMm: data.custom_depth_mm ?? null,
+  };
+}
+
+// ================================================
+// TEMPLATE IMAGES QUERIES
+// ================================================
+
+export async function fetchTemplateImages(
+  templateId: number,
+  client?: SupabaseClient,
+): Promise<ProductTemplateImage[]> {
+  const supabase = await resolveClient(client);
+  const { data, error } = await supabase
+    .from("product_template_images")
+    .select("*")
+    .eq("product_template_id", templateId)
+    .order("image_type", { ascending: true })
+    .order("display_order", { ascending: true });
+
+  if (error) {
+    throw error;
   }
+
+  return (data ?? []).map((img) => ({
+    id: img.id,
+    product_template_id: img.product_template_id,
+    image_url: img.image_url,
+    image_type: img.image_type as ProductTemplateImage["image_type"],
+    alt_text: img.alt_text ?? undefined,
+    display_order: img.display_order ?? 0,
+    created_at: img.created_at,
+    updated_at: img.updated_at,
+  }));
 }
