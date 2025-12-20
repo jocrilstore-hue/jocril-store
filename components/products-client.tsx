@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ const clamp = (value: number, min: number, max: number) =>
 const isValidPrice = (value: number | null | undefined): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-export function ProductsClient({
+function ProductsClientInner({
   initialProducts,
   categories,
   minPrice: serverMinPrice,
@@ -537,5 +537,37 @@ export function ProductsClient({
         </div>
       </div>
     </div>
+  );
+}
+
+function ProductsLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-4">
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <aside className="w-full lg:w-64 flex-shrink-0">
+            <div className="h-96 bg-muted animate-pulse rounded" />
+          </aside>
+          <main className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-80 bg-muted animate-pulse rounded" />
+              ))}
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProductsClient(props: ProductsClientProps) {
+  return (
+    <Suspense fallback={<ProductsLoadingFallback />}>
+      <ProductsClientInner {...props} />
+    </Suspense>
   );
 }
