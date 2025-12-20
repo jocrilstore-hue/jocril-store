@@ -70,8 +70,6 @@ const services: Service[] = [
   },
 ]
 
-export const revalidate = 3600 // 1 hour
-
 export default function SobrePage() {
   return (
     <div className="min-h-screen bg-background">
