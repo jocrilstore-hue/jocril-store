@@ -1,7 +1,9 @@
 import { Resend } from "resend"
 import { createClient } from "@/lib/supabase/server"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY) 
+  : null
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev"
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "geral@jocril.pt"
@@ -39,6 +41,10 @@ export async function sendEmail({
   let success = false
 
   try {
+    if (!resend) {
+      throw new Error("Resend API key is not configured")
+    }
+
     const { data, error } = await resend.emails.send({
       from: `Jocril Acrílicos <${EMAIL_FROM}>`,
       to: [to],
