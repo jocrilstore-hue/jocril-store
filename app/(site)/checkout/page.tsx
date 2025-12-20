@@ -13,14 +13,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ShoppingBag } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ShoppingBag, CreditCard, Smartphone } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+
+type PaymentMethod = "multibanco" | "mbway"
 
 export default function CheckoutPage() {
   const { cart } = useCart()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("multibanco")
+  const [phoneError, setPhoneError] = useState("")
 
   const [formData, setFormData] = useState({
     // Customer info
@@ -35,6 +40,8 @@ export default function CheckoutPage() {
     city: "",
     postalCode: "",
     country: "Portugal",
+    // Payment
+    mbwayPhone: "",
     // Additional
     notes: "",
     acceptTerms: false,
@@ -91,10 +98,22 @@ export default function CheckoutPage() {
   }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     })
+
+    // Clear phone error when user types
+    if (name === "mbwayPhone") {
+      setPhoneError("")
+    }
+  }
+
+  // Validate Portuguese mobile phone
+  const validateMBWayPhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, "")
+    return /^9[1236]\d{7}$/.test(cleaned)
   }
 
   const shippingCost = cart.totalPrice >= 150 ? 0 : 7.5
@@ -103,6 +122,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setPhoneError("")
 
     // Validation
     if (
@@ -116,6 +136,20 @@ export default function CheckoutPage() {
       alert("Por favor preencha todos os campos obrigatórios")
       setIsSubmitting(false)
       return
+    }
+
+    // Validate MB Way phone if selected
+    if (paymentMethod === "mbway") {
+      if (!formData.mbwayPhone) {
+        setPhoneError("Introduza o número de telemóvel")
+        setIsSubmitting(false)
+        return
+      }
+      if (!validateMBWayPhone(formData.mbwayPhone)) {
+        setPhoneError("Número inválido. Use formato 9XXXXXXXX (91, 92, 93 ou 96)")
+        setIsSubmitting(false)
+        return
+      }
     }
 
     if (!formData.acceptTerms) {
@@ -147,25 +181,79 @@ export default function CheckoutPage() {
     }
 
     try {
-      // Call API to create order
-      const response = await fetch("/api/orders", {
+      // Step 1: Create order
+      const orderResponse = await fetch("/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        // Redirect to success page
-        router.push(`/checkout/sucesso?orderId=${result.orderId}`)
+      const orderResult = await orderResponse.json()
+
+      if (!orderResponse.ok || !orderResult.success) {
+        throw new Error(orderResult.error || "Erro ao criar encomenda")
+      }
+
+      const orderNumber = orderResult.data.orderNumber
+
+      // Step 2: Process payment based on method
+      if (paymentMethod === "multibanco") {
+        const paymentResponse = await fetch("/api/payment/multibanco", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: orderNumber }),
+        })
+
+        const paymentResult = await paymentResponse.json()
+
+        if (!paymentResponse.ok || !paymentResult.success) {
+          // Order created but payment failed - still redirect with order ID
+          console.error("Payment error:", paymentResult.error)
+          router.push(`/checkout/sucesso?orderId=${orderNumber}&paymentError=true`)
+          return
+        }
+
+        // Redirect to success with Multibanco details
+        const params = new URLSearchParams({
+          orderId: orderNumber,
+          method: "multibanco",
+          entity: paymentResult.data.entity,
+          reference: paymentResult.data.reference,
+          amount: paymentResult.data.amount.toString(),
+          deadline: paymentResult.data.deadline,
+        })
+        router.push(`/checkout/sucesso?${params.toString()}`)
       } else {
-        throw new Error("Failed to create order")
+        // MB Way
+        const paymentResponse = await fetch("/api/payment/mbway", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: orderNumber,
+            phoneNumber: formData.mbwayPhone,
+          }),
+        })
+
+        const paymentResult = await paymentResponse.json()
+
+        if (!paymentResponse.ok || !paymentResult.success) {
+          console.error("MB Way error:", paymentResult.error)
+          router.push(`/checkout/sucesso?orderId=${orderNumber}&paymentError=true`)
+          return
+        }
+
+        // Redirect to success with MB Way details
+        const params = new URLSearchParams({
+          orderId: orderNumber,
+          method: "mbway",
+          phone: paymentResult.data.phone,
+          amount: paymentResult.data.amount.toString(),
+        })
+        router.push(`/checkout/sucesso?${params.toString()}`)
       }
     } catch (error) {
       console.error("Error submitting order:", error)
-      alert("Erro ao processar encomenda. Por favor tente novamente.")
+      alert(error instanceof Error ? error.message : "Erro ao processar encomenda. Por favor tente novamente.")
     } finally {
       setIsSubmitting(false)
     }
@@ -339,10 +427,69 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
+              {/* Payment Method */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>4. Método de Pagamento</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <RadioGroup
+                    value={paymentMethod}
+                    onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="multibanco" id="multibanco" />
+                      <Label htmlFor="multibanco" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <CreditCard className="w-6 h-6 text-primary" />
+                        <div>
+                          <p className="font-medium">Referência Multibanco</p>
+                          <p className="text-sm text-muted-foreground">Pague via homebanking ou caixa multibanco</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="mbway" id="mbway" className="mt-1" />
+                      <Label htmlFor="mbway" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <Smartphone className="w-6 h-6 text-primary" />
+                          <div>
+                            <p className="font-medium">MB Way</p>
+                            <p className="text-sm text-muted-foreground">Pague diretamente pelo telemóvel</p>
+                          </div>
+                        </div>
+                        {paymentMethod === "mbway" && (
+                          <div className="mt-4 ml-9">
+                            <Label htmlFor="mbwayPhone" className="text-sm">
+                              Número de Telemóvel <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="mbwayPhone"
+                              name="mbwayPhone"
+                              type="tel"
+                              value={formData.mbwayPhone}
+                              onChange={handleInputChange}
+                              placeholder="912345678"
+                              className={`mt-1 max-w-xs ${phoneError ? "border-destructive" : ""}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Números válidos: 91, 92, 93 ou 96
+                            </p>
+                          </div>
+                        )}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
               {/* Additional Notes */}
               <Card>
                 <CardHeader>
-                  <CardTitle>4. Observações (Opcional)</CardTitle>
+                  <CardTitle>5. Observações (Opcional)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea

@@ -32,7 +32,12 @@
       "Bash(powershell \"Start-Sleep -Seconds 8\")",
       "Bash(npx supabase db push)",
       "Bash(npx supabase:*)",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(bun run build:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__list_migrations",
+      "Bash(bun add:*)"
     ],
     "deny": [],
     "ask": []

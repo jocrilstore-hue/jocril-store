@@ -70,11 +70,13 @@ const services: Service[] = [
   },
 ]
 
+export const revalidate = 3600 // 1 hour
+
 export default function SobrePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section 
+      <section
         className="relative mx-auto grid h-auto w-full grid-cols-1 gap-x-4 lg:grid-cols-12 lg:gap-x-6 px-4 lg:px-9 lg:h-[calc((100dvh-160px)*0.7)] lg:max-h-[507px] lg:min-h-[434px] items-start lg:items-end bg-cover bg-center"
         style={{
           backgroundImage: `url('/images/back2-mi.avif')`,
@@ -123,9 +125,8 @@ export default function SobrePage() {
           {services.map((service, index) => (
             <div
               key={service.id}
-              className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-start py-12 ${
-                index !== services.length - 1 ? "border-b border-border" : ""
-              }`}
+              className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-start py-12 ${index !== services.length - 1 ? "border-b border-border" : ""
+                }`}
             >
               {/* Content */}
               <div className={`lg:col-span-6 flex flex-col gap-y-4 ${index % 2 === 1 ? "lg:col-start-7 lg:order-2" : ""}`}>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { currentUser } from "@clerk/nextjs/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Package, ArrowLeft } from "lucide-react"
@@ -7,18 +8,17 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
 export default async function OrdersPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await currentUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/sign-in")
   }
 
+  const userEmail = user.emailAddresses[0]?.emailAddress
+  const supabase = await createClient()
+
   // Get customer data
-  const { data: customer } = await supabase.from("customers").select("id").eq("email", user.email).single()
+  const { data: customer } = await supabase.from("customers").select("id").eq("email", userEmail).single()
 
   // Get all orders with items
   const { data: orders } = await supabase

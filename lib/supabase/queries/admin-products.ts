@@ -1,9 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductTemplateImage, ProductSpecifications } from "@/lib/types";
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/lib/constants";
 
 export type ProductTemplateSort =
   | "name-asc"
@@ -67,6 +65,10 @@ type RawTemplateRow = {
     is_active?: boolean | null;
     main_image_url?: string | null;
     display_order?: number | null;
+  }> | null;
+  template_images?: Array<{
+    image_url: string;
+    image_type: string;
   }> | null;
 };
 
@@ -170,6 +172,9 @@ export interface ProductVariantDetail extends VariantSummary {
   customHeightMm?: number | null;
   customDepthMm?: number | null;
   stockQuantity?: number | null;
+  specificationsJson?: ProductSpecifications | null;
+  minOrderQuantity?: number | null;
+  technicalImageUrl?: string | null;
 }
 
 const SORT_MAP: Record<
@@ -211,6 +216,13 @@ function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
   const activeVariant = sortedVariants.find((variant) => variant.is_active);
   const thumbnailSource = activeVariant ?? sortedVariants[0];
 
+  // Priority: template main image > variant main_image_url
+  const templateMainImage = row.template_images?.find(
+    (img) => img.image_type === "main",
+  )?.image_url;
+  const thumbnailUrl =
+    templateMainImage ?? thumbnailSource?.main_image_url ?? null;
+
   return {
     id: row.id,
     name: row.name,
@@ -230,7 +242,7 @@ function mapTemplateRow(row: RawTemplateRow): ProductTemplateSummary {
       : null,
     variantCount: variants.length,
     activeVariantCount: variants.filter((variant) => variant.is_active).length,
-    thumbnailUrl: thumbnailSource?.main_image_url ?? null,
+    thumbnailUrl,
   };
 }
 
@@ -283,6 +295,10 @@ export async function fetchAdminProductTemplates(
           is_active,
           main_image_url,
           display_order
+        ),
+        template_images:product_template_images (
+          image_url,
+          image_type
         )
       `,
       { count: "exact" },
@@ -439,6 +455,9 @@ export async function fetchProductTemplateDetail(
           is_active,
           main_image_url,
           display_order
+        ),
+        applications:product_applications (
+          application_id
         )
       `,
     )
@@ -450,15 +469,6 @@ export async function fetchProductTemplateDetail(
       return null;
     }
     throw error;
-  }
-
-  const { data: applicationLinks, error: applicationsError } = await supabase
-    .from("product_applications")
-    .select("application_id")
-    .eq("product_template_id", id);
-
-  if (applicationsError) {
-    throw applicationsError;
   }
 
   const template = data as RawTemplateRow & {
@@ -480,6 +490,7 @@ export async function fetchProductTemplateDetail(
     seo_description_template?: string | null;
     category_id?: number | null;
     material_id?: number | null;
+    applications?: Array<{ application_id: number }>;
   };
 
   return {
@@ -502,7 +513,7 @@ export async function fetchProductTemplateDetail(
     orientation: template.orientation ?? null,
     seoTitleTemplate: template.seo_title_template ?? null,
     seoDescriptionTemplate: template.seo_description_template ?? null,
-    applications: (applicationLinks ?? []).map((item) => item.application_id),
+    applications: (template.applications ?? []).map((item) => item.application_id),
   };
 }
 
@@ -622,6 +633,9 @@ export async function fetchVariantDetail(
         custom_width_mm,
         custom_height_mm,
         custom_depth_mm,
+        specifications_json,
+        min_order_quantity,
+        technical_image_url,
         is_active,
         is_bestseller,
         size_format:size_formats!product_variants_size_format_id_fkey (
@@ -696,6 +710,9 @@ export async function fetchVariantDetail(
     customWidthMm: data.custom_width_mm ?? null,
     customHeightMm: data.custom_height_mm ?? null,
     customDepthMm: data.custom_depth_mm ?? null,
+    specificationsJson: data.specifications_json ?? null,
+    minOrderQuantity: data.min_order_quantity ?? 1,
+    technicalImageUrl: data.technical_image_url ?? null,
   };
 }
 

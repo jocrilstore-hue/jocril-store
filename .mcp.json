@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "supabase": {
+      "type": "sse",
       "url": "https://mcp.supabase.com/mcp",
-      "transport": "http",
       "headers": {
         "Authorization": "Bearer sbp_f05087f7e58a4b7f8fc7532cfa2bd096165adac3",
         "X-Project-Ref": "qhzfpampacitsianmlpw"

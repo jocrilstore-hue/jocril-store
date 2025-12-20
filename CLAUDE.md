@@ -65,13 +65,39 @@ The product system uses a template-variant hierarchy:
 - **PriceTier** - Quantity-based discount tiers per variant
 - **ProductImage** / **ProductTemplateImage** - Gallery images
 
-### Admin Authentication
-Uses layered permission checking in `lib/auth/permissions.ts`:
-1. User metadata roles (app_metadata.role, user_metadata.role)
-2. Environment variable admin emails (ADMIN_EMAILS, NEXT_PUBLIC_ADMIN_EMAILS)
-3. Database `user_roles` table lookup
+### Authentication (Clerk)
+Uses Clerk for authentication with Portuguese (pt-PT) localization.
 
-Admin routes are protected in `app/(admin)/admin/layout.tsx` using `userIsAdmin()`.
+**Auth Routes**:
+- `/sign-in` - Clerk's pre-built sign-in UI
+- `/sign-up` - Clerk's pre-built sign-up UI
+
+**Protected Routes** (via `proxy.ts` middleware):
+- `/admin/*` - Admin panel (requires admin role)
+- `/conta` - User account
+- `/encomendas` - User orders
+
+**Admin Check** (`lib/auth/permissions.ts`):
+1. Clerk publicMetadata.role === 'admin'
+2. Email matches `ADMIN_EMAILS` env var
+
+**API Route Pattern**:
+```typescript
+import { auth } from "@clerk/nextjs/server"
+import { userIsAdmin } from "@/lib/auth/permissions"
+
+const { userId } = await auth()
+if (!userId || !(await userIsAdmin())) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+}
+```
+
+**Server Component Pattern**:
+```typescript
+import { currentUser } from "@clerk/nextjs/server"
+const user = await currentUser()
+const email = user?.emailAddresses[0]?.emailAddress
+```
 
 ### Supabase Integration
 - Server-side client: `lib/supabase/server.ts` using `@supabase/ssr`

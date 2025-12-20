@@ -80,6 +80,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           alt={templateInfo?.name || "Produto"}
                           fill
                           className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

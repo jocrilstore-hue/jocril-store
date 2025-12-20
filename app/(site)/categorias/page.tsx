@@ -12,6 +12,9 @@ const categoryImageMap: Record<string, string> = {
   "tombolas-acrilico": "/categories/tombolas-acrilico.avif",
 }
 
+
+export const revalidate = 3600 // 1 hour
+
 export default async function CategoriesPage() {
   const supabase = await createClient()
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useForm,
@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -48,7 +48,11 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import { generateSlug } from "@/lib/validations/product-schemas";
+import {
+  generateSlug,
+  generateReferenceCode,
+  generateSkuPrefix,
+} from "@/lib/validations/product-schemas";
 // Note: Server-side validation function removed - will be added back via API routes
 // import { validateTemplateSlug } from "@/lib/validations/uniqueness"
 import { handleAsyncOperation } from "@/lib/utils/supabase-errors";
@@ -148,6 +152,7 @@ export function ProductTemplateForm({
     "idle",
   );
   const [publishMode, setPublishMode] = useState<"draft" | "publish">("draft");
+  const publishModeRef = useRef<"draft" | "publish">("draft");
   const [slugValidation, setSlugValidation] = useState<{
     checking: boolean;
     unique: boolean;
@@ -273,7 +278,8 @@ export function ProductTemplateForm({
           orientation: values.orientation,
           min_order_quantity: values.minOrderQuantity,
           display_order: values.displayOrder ?? 0,
-          is_active: publishMode === "publish" ? true : values.isActive,
+          is_active:
+            publishModeRef.current === "publish" ? true : values.isActive,
           is_featured: values.isFeatured,
           is_customizable: values.isCustomizable,
           is_double_sided: values.isDoubleSided,
@@ -325,7 +331,7 @@ export function ProductTemplateForm({
       },
       {
         successMessage:
-          publishMode === "publish"
+          publishModeRef.current === "publish"
             ? "Produto publicado! Está agora ativo no site."
             : "Produto guardado como rascunho.",
         errorTitle: "Erro ao guardar produto",
@@ -382,6 +388,25 @@ export function ProductTemplateForm({
     await checkSlugUniqueness(slug);
   };
 
+  // Auto-generate fields when name changes (create mode only)
+  const watchedName = form.watch("name");
+  useEffect(() => {
+    if (mode !== "create" || !watchedName || watchedName.length < 3) return;
+
+    // Auto-generate slug
+    const slug = generateSlug(watchedName);
+    form.setValue("slug", slug);
+    checkSlugUniqueness(slug);
+
+    // Auto-generate reference code (only if empty)
+    if (!form.getValues("referenceCode")) {
+      form.setValue("referenceCode", generateReferenceCode());
+    }
+
+    // Auto-generate SKU prefix
+    form.setValue("skuPrefix", generateSkuPrefix(watchedName));
+  }, [watchedName, mode, form, checkSlugUniqueness]);
+
   return (
     <FormProvider {...form}>
       <form className="space-y-6" onSubmit={handleSubmit}>
@@ -392,12 +417,13 @@ export function ProductTemplateForm({
             variant="outline"
             onClick={() => {
               setPublishMode("draft");
+              publishModeRef.current = "draft";
               handleSubmit();
             }}
             disabled={savingState === "saving"}
             className="gap-2"
           >
-            {savingState === "saving" && publishMode === "draft" ? (
+            {savingState === "saving" && publishModeRef.current === "draft" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : null}
             Guardar rascunho
@@ -406,12 +432,14 @@ export function ProductTemplateForm({
             type="button"
             onClick={() => {
               setPublishMode("publish");
+              publishModeRef.current = "publish";
               handleSubmit();
             }}
             className="gap-2"
             disabled={savingState === "saving"}
           >
-            {savingState === "saving" && publishMode === "publish" ? (
+            {savingState === "saving" &&
+              publishModeRef.current === "publish" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : null}
             Publicar
@@ -472,10 +500,10 @@ export function ProductTemplateForm({
                       }}
                       className={cn(
                         !slugValidation.unique &&
-                          "border-destructive focus-visible:ring-destructive",
+                        "border-destructive focus-visible:ring-destructive",
                         slugValidation.unique &&
-                          form.watch("slug") &&
-                          "border-green-500 focus-visible:ring-green-500",
+                        form.watch("slug") &&
+                        "border-green-500 focus-visible:ring-green-500",
                       )}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -608,14 +636,6 @@ export function ProductTemplateForm({
                     {...form.register("minOrderQuantity", {
                       valueAsNumber: true,
                     })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="displayOrder">Ordem de exibição</Label>
-                  <Input
-                    id="displayOrder"
-                    type="number"
-                    {...form.register("displayOrder", { valueAsNumber: true })}
                   />
                 </div>
                 <div className="col-span-full grid gap-3 rounded-lg border p-4 md:grid-cols-3">

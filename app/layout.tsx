@@ -5,6 +5,8 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CartProvider } from "@/contexts/cart-context"
 import { Toaster } from "@/components/ui/toaster"
+import { ClerkProvider } from "@clerk/nextjs"
+import { ptPT } from "@clerk/localizations"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,24 +32,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt" suppressHydrationWarning>
-      <head>
-        <link
-          rel="preload"
-          href="/fonts/geist-sans.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <CartProvider>
-            {children}
-            <Toaster />
-          </CartProvider>
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider localization={ptPT}>
+      <html lang="pt" suppressHydrationWarning>
+        <head>
+          {/* Preconnect hints for faster resource loading */}
+          <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        </head>
+        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

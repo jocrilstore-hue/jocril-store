@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { fetchAdminProductTemplates, type ProductTemplateSort, type ProductTemplateStatusFilter } from "@/lib/supabase/queries/admin-products"
 import { createClient } from "@/lib/supabase/server"
-import { userHasAdminAccess } from "@/lib/auth/permissions"
+import { auth } from "@clerk/nextjs/server"
+import { userIsAdmin } from "@/lib/auth/permissions"
+import { logger } from "@/lib/logger"
 
 function parseNumberParam(value: string | null) {
   if (!value) return undefined
@@ -10,14 +12,13 @@ function parseNumberParam(value: string | null) {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user || !userHasAdminAccess(user)) {
+  const { userId } = await auth()
+  
+  if (!userId || !(await userIsAdmin())) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
   }
+
+  const supabase = await createClient()
 
   const { searchParams } = request.nextUrl
 
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
     const data = await fetchAdminProductTemplates(filters, supabase)
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Failed to fetch admin products", error)
+    logger.exception(error, { route: "/api/admin/products", method: "GET" })
     return NextResponse.json({ error: "Erro ao carregar produtos" }, { status: 500 })
   }
 }
+

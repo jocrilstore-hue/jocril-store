@@ -1,34 +1,27 @@
 import type React from "react"
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { currentUser } from "@clerk/nextjs/server"
 import { userIsAdmin } from "@/lib/auth/permissions"
 import { AdminShell } from "@/components/admin/admin-shell"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await currentUser()
 
   if (!user) {
-    redirect("/auth/login?redirectTo=/admin")
+    redirect("/sign-in?redirect_url=/admin")
   }
 
-  // Check both env variables AND database for admin access
-  const isAdmin = await userIsAdmin(supabase, user)
+  // Check admin access via Clerk metadata or env variables
+  const isAdmin = await userIsAdmin()
   if (!isAdmin) {
     redirect("/")
   }
 
-  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>
   const profile = {
     id: user.id,
-    email: user.email ?? null,
-    name:
-      (metadata.full_name as string | undefined) ??
-      (metadata.name as string | undefined) ??
-      user.email,
-    avatarUrl: (metadata.avatar_url as string | undefined) ?? undefined,
+    email: user.emailAddresses[0]?.emailAddress ?? null,
+    name: user.fullName ?? user.username ?? user.emailAddresses[0]?.emailAddress,
+    avatarUrl: user.imageUrl ?? undefined,
   }
 
   return <AdminShell user={profile}>{children}</AdminShell>

@@ -14,6 +14,8 @@ export const metadata: Metadata = {
     "Perguntas frequentes sobre envios, devoluções, pagamentos, produtos, contas, suporte e política de entregas da Jocril.",
 };
 
+export const revalidate = 3600 // 1 hour
+
 const faqSections = [
   {
     id: "envios-entregas",

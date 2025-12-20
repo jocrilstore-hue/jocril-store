@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { currentUser } from "@clerk/nextjs/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { User, Package, MapPin, Mail } from "lucide-react"
@@ -6,18 +7,17 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 export default async function AccountPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await currentUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/sign-in")
   }
 
+  const userEmail = user.emailAddresses[0]?.emailAddress
+  const supabase = await createClient()
+
   // Get customer data
-  const { data: customer } = await supabase.from("customers").select("*").eq("email", user.email).single()
+  const { data: customer } = await supabase.from("customers").select("*").eq("email", userEmail).single()
 
   // Get recent orders
   const { data: orders } = await supabase
@@ -49,7 +49,7 @@ export default async function AccountPage() {
                 <p className="text-sm font-medium text-muted-foreground">Email</p>
                 <p className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  {user.email}
+                  {userEmail}
                 </p>
               </div>
               {customer && (

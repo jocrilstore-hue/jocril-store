@@ -22,6 +22,7 @@ import {
   Search,
   Star,
   Trash2,
+  FolderInput,
 } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Pagination,
   PaginationContent,
@@ -61,6 +62,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -110,6 +122,8 @@ export function ProductTemplatesTable({
   const [selection, setSelection] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
+  const [bulkMaterialId, setBulkMaterialId] = useState<string>("");
   const [filters, setFilters] = useState<{
     search: string;
     categoryId: string;
@@ -233,6 +247,32 @@ export function ProductTemplatesTable({
       title: "Alterações aplicadas",
       description: successMessage,
     });
+    setBulkCategoryId("");
+    setBulkMaterialId("");
+    await fetchTemplates();
+  };
+
+  const handleBulkDelete = async () => {
+    if (selection.length === 0) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from("product_templates")
+      .delete()
+      .in("id", selection);
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar os produtos selecionados.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    toast({
+      title: "Produtos eliminados",
+      description: `${selection.length} produto(s) eliminado(s) com sucesso.`,
+    });
+    setSelection([]);
     await fetchTemplates();
   };
 
@@ -573,7 +613,97 @@ export function ProductTemplatesTable({
               >
                 Remover destaque
               </Button>
+
+              {/* Bulk Delete */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" disabled={loading}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Eliminar produtos?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação irá eliminar permanentemente {selection.length}{" "}
+                      produto(s) e todas as suas variantes associadas. Esta ação
+                      não pode ser revertida.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleBulkDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
+
+            {/* Move to Category */}
+            <div className="flex items-center gap-2">
+              <FolderInput className="h-4 w-4 text-muted-foreground" />
+              <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
+                <SelectTrigger className="h-8 w-[160px]">
+                  <SelectValue placeholder="Mover Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {taxonomies.categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!bulkCategoryId || loading}
+                onClick={() =>
+                  handleBulkUpdate(
+                    { category_id: parseInt(bulkCategoryId) },
+                    `${selection.length} produto(s) movido(s) para a categoria.`,
+                  )
+                }
+              >
+                Aplicar
+              </Button>
+            </div>
+
+            {/* Move to Material */}
+            <div className="flex items-center gap-2">
+              <FolderInput className="h-4 w-4 text-muted-foreground" />
+              <Select value={bulkMaterialId} onValueChange={setBulkMaterialId}>
+                <SelectTrigger className="h-8 w-[160px]">
+                  <SelectValue placeholder="Mover Material" />
+                </SelectTrigger>
+                <SelectContent>
+                  {taxonomies.materials.map((material) => (
+                    <SelectItem key={material.id} value={String(material.id)}>
+                      {material.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!bulkMaterialId || loading}
+                onClick={() =>
+                  handleBulkUpdate(
+                    { material_id: parseInt(bulkMaterialId) },
+                    `${selection.length} produto(s) movido(s) para o material.`,
+                  )
+                }
+              >
+                Aplicar
+              </Button>
+            </div>
+
             <Button
               size="sm"
               variant="ghost"
@@ -768,13 +898,13 @@ export function ProductTemplatesTable({
                       <TableCell>
                         {template.updatedAt
                           ? new Date(template.updatedAt).toLocaleDateString(
-                              "pt-PT",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              },
-                            )
+                            "pt-PT",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
                           : "—"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -960,7 +1090,7 @@ export function ProductTemplatesTable({
                   aria-disabled={data.page === data.totalPages}
                   className={cn(
                     data.page === data.totalPages &&
-                      "pointer-events-none opacity-50",
+                    "pointer-events-none opacity-50",
                   )}
                 />
               </PaginationItem>

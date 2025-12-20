@@ -1,29 +1,154 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
+import { z } from "zod"
+import { sendOrderConfirmation, sendAdminNotification } from "@/lib/email/send-order-emails"
 
+// Validation schemas
+const customerSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(9, "Telefone inválido"),
+  company: z.string().optional(),
+  nif: z.string().optional(),
+})
+
+const shippingSchema = z.object({
+  address: z.string().min(1, "Morada é obrigatória"),
+  address2: z.string().optional(),
+  city: z.string().min(1, "Cidade é obrigatória"),
+  postalCode: z.string().min(4, "Código postal inválido"),
+  country: z.string().default("Portugal"),
+})
+
+const orderItemSchema = z.object({
+  variantId: z.number(),
+  quantity: z.number().min(1),
+  unitPrice: z.number(),
+  totalPrice: z.number(),
+  productName: z.string().optional(),
+  productSku: z.string().optional(),
+  sizeFormat: z.string().optional(),
+})
+
+const createOrderSchema = z.object({
+  customer: customerSchema,
+  shipping: shippingSchema,
+  items: z.array(orderItemSchema).min(1, "Carrinho vazio"),
+  subtotal: z.number(),
+  shippingCost: z.number(),
+  total: z.number(),
+  notes: z.string().optional(),
+})
+
+// GET - Fetch order by order_number or user's orders
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
+    const orderNumber = searchParams.get("order_number")
+    const { userId } = await auth()
+
+    // Fetch single order by order_number
+    if (orderNumber) {
+      const { data: order, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          customer:customers(*),
+          shipping_address:shipping_addresses(*),
+          items:order_items(*)
+        `)
+        .eq("order_number", orderNumber)
+        .single()
+
+      if (error || !order) {
+        return NextResponse.json(
+          { success: false, error: "Encomenda não encontrada" },
+          { status: 404 }
+        )
+      }
+
+      // If user is logged in, verify they own this order
+      if (userId) {
+        const customer = order.customer as { auth_user_id?: string }
+        if (customer?.auth_user_id && customer.auth_user_id !== userId) {
+          return NextResponse.json(
+            { success: false, error: "Não autorizado" },
+            { status: 403 }
+          )
+        }
+      }
+
+      return NextResponse.json({ success: true, data: order })
+    }
+
+    // Fetch all orders for logged-in user
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Autenticação necessária" },
+        { status: 401 }
+      )
+    }
+
+    // Find customer by auth_user_id
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("auth_user_id", userId)
+      .single()
+
+    if (!customer) {
+      return NextResponse.json({ success: true, data: [] })
+    }
+
+    const { data: orders, error } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        items:order_items(*)
+      `)
+      .eq("customer_id", customer.id)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching orders:", error)
+      return NextResponse.json(
+        { success: false, error: "Erro ao carregar encomendas" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true, data: orders })
+  } catch (error) {
+    console.error("Error in GET /api/orders:", error)
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Create new order
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const data = await request.json()
+    const body = await request.json()
 
-    const { customer, shipping, items, subtotal, shippingCost, total, notes } = data
-
-    // Validate required fields
-    if (!customer.name || !customer.email || !customer.phone) {
-      return NextResponse.json({ error: "Missing customer information" }, { status: 400 })
+    // Validate request body
+    const parseResult = createOrderSchema.safeParse(body)
+    if (!parseResult.success) {
+      const errors = parseResult.error.flatten().fieldErrors
+      return NextResponse.json(
+        { success: false, error: "Dados inválidos", details: errors },
+        { status: 400 }
+      )
     }
 
-    if (!shipping.address || !shipping.city || !shipping.postalCode) {
-      return NextResponse.json({ error: "Missing shipping information" }, { status: 400 })
-    }
+    const { customer, shipping, items, subtotal, shippingCost, total, notes } = parseResult.data
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: "No items in order" }, { status: 400 })
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    // Optional authentication - guests can also checkout
+    const { userId } = await auth()
 
     const nameParts = customer.name.trim().split(" ")
     const firstName = nameParts[0] || ""
@@ -40,7 +165,8 @@ export async function POST(request: Request) {
     if (existingCustomer) {
       customerId = existingCustomer.id
 
-      const { error: updateError } = await supabase
+      // Update customer info
+      await supabase
         .from("customers")
         .update({
           first_name: firstName,
@@ -48,12 +174,9 @@ export async function POST(request: Request) {
           phone: customer.phone,
           company_name: customer.company || null,
           tax_id: customer.nif || null,
+          ...(userId && { auth_user_id: userId }),
         })
         .eq("id", customerId)
-
-      if (updateError) {
-        console.error("Error updating customer:", updateError)
-      }
     } else {
       // Create new customer
       const { data: newCustomer, error: customerError } = await supabase
@@ -65,14 +188,17 @@ export async function POST(request: Request) {
           phone: customer.phone,
           company_name: customer.company || null,
           tax_id: customer.nif || null,
-          auth_user_id: user?.id || null,
+          auth_user_id: userId || null,
         })
         .select("id")
         .single()
 
       if (customerError || !newCustomer) {
         console.error("Error creating customer:", customerError)
-        return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
+        return NextResponse.json(
+          { success: false, error: "Erro ao criar cliente" },
+          { status: 500 }
+        )
       }
 
       customerId = newCustomer.id
@@ -84,6 +210,7 @@ export async function POST(request: Request) {
       .insert({
         customer_id: customerId,
         address_line_1: shipping.address,
+        address_line_2: shipping.address2 || null,
         city: shipping.city,
         postal_code: shipping.postalCode,
         country: shipping.country,
@@ -94,7 +221,10 @@ export async function POST(request: Request) {
 
     if (shippingError || !shippingAddress) {
       console.error("Error creating shipping address:", shippingError)
-      return NextResponse.json({ error: "Failed to create shipping address" }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: "Erro ao criar morada de envio" },
+        { status: 500 }
+      )
     }
 
     // Generate order number
@@ -121,52 +251,98 @@ export async function POST(request: Request) {
 
     if (orderError || !order) {
       console.error("Error creating order:", orderError)
-      return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: "Erro ao criar encomenda" },
+        { status: 500 }
+      )
     }
 
-    // Create order items
-    const orderItems = items.map((item: any) => ({
-      order_id: order.id,
-      product_variant_id: item.variantId,
-      quantity: item.quantity,
-      unit_price_excluding_vat: item.unitPrice / 1.23,
-      unit_price_with_vat: item.unitPrice,
-      line_total_excluding_vat: item.totalPrice / 1.23,
-      line_total_with_vat: item.totalPrice,
-    }))
+    // Fetch product info for snapshots
+    const variantIds = items.map((item) => item.variantId)
+    const { data: variants } = await supabase
+      .from("product_variants")
+      .select(`
+        id,
+        sku,
+        size_format,
+        stock_quantity,
+        template:product_templates(name)
+      `)
+      .in("id", variantIds)
+
+    const variantMap = new Map(
+      variants?.map((v) => [v.id, v]) || []
+    )
+
+    // Create order items with product snapshots
+    const orderItems = items.map((item) => {
+      const variant = variantMap.get(item.variantId)
+      const template = variant?.template as { name?: string } | null
+
+      return {
+        order_id: order.id,
+        product_variant_id: item.variantId,
+        quantity: item.quantity,
+        unit_price_excluding_vat: item.unitPrice / 1.23,
+        unit_price_with_vat: item.unitPrice,
+        line_total_excluding_vat: item.totalPrice / 1.23,
+        line_total_with_vat: item.totalPrice,
+        // Snapshot fields
+        product_name: item.productName || template?.name || null,
+        product_sku: item.productSku || variant?.sku || null,
+        size_format: item.sizeFormat || variant?.size_format || null,
+      }
+    })
 
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
 
     if (itemsError) {
       console.error("Error creating order items:", itemsError)
-      return NextResponse.json({ error: "Failed to create order items" }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: "Erro ao criar itens da encomenda" },
+        { status: 500 }
+      )
     }
 
     // Update product stock quantities
     for (const item of items) {
-      const { data: variant } = await supabase
-        .from("product_variants")
-        .select("stock_quantity")
-        .eq("id", item.variantId)
-        .single()
-
+      const variant = variantMap.get(item.variantId)
       if (variant) {
         const newStock = Math.max(0, (variant.stock_quantity || 0) - item.quantity)
-        await supabase.from("product_variants").update({ stock_quantity: newStock }).eq("id", item.variantId)
+        await supabase
+          .from("product_variants")
+          .update({ stock_quantity: newStock })
+          .eq("id", item.variantId)
       }
     }
 
-    // Return success with order ID
+    // Send emails (don't fail order if emails fail)
+    try {
+      // These run in parallel but we don't await them to not block the response
+      Promise.all([
+        sendOrderConfirmation(order.order_number),
+        sendAdminNotification(order.order_number),
+      ]).catch((err) => console.error("Email send error:", err))
+    } catch (emailError) {
+      console.error("Failed to queue emails:", emailError)
+    }
+
     return NextResponse.json(
       {
         success: true,
-        orderId: order.order_number,
-        message: "Order created successfully",
+        data: {
+          orderId: order.id,
+          orderNumber: order.order_number,
+        },
+        message: "Encomenda criada com sucesso",
       },
-      { status: 201 },
+      { status: 201 }
     )
   } catch (error) {
     console.error("Error processing order:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 }
+    )
   }
 }
