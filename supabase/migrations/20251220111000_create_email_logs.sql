@@ -23,12 +23,15 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at);
 ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Service role has full access
+-- RLS Policy: Service role has full access
+DROP POLICY IF EXISTS "Service role has full access to email_logs" ON email_logs;
 CREATE POLICY "Service role has full access to email_logs"
     ON email_logs FOR ALL
     USING (true)
     WITH CHECK (true);
 
 -- RLS Policy: Users can view their own email logs
+DROP POLICY IF EXISTS "Users can view their own email logs" ON email_logs;
 CREATE POLICY "Users can view their own email logs"
     ON email_logs FOR SELECT
     USING (

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CartIcon } from "@/components/cart-icon"
 import { UserMenu } from "@/components/user-menu"
+import { SiteSearch } from "@/components/site-search"
 import Image from "next/image"
 
 export function SiteHeader() {
@@ -39,6 +40,7 @@ export function SiteHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <SiteSearch />
           <Button variant="outline" size="sm" className="hidden text-[11px] uppercase tracking-wide md:flex">
             LOJA ONLINE
           </Button>

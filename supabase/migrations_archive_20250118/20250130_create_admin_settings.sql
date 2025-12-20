@@ -17,17 +17,21 @@ CREATE INDEX IF NOT EXISTS idx_admin_settings_key ON admin_settings(key);
 ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
 
 -- Only authenticated users can read settings (admin check done at API level)
+-- Only authenticated users can read settings (admin check done at API level)
+DROP POLICY IF EXISTS "Authenticated users can read settings" ON admin_settings;
 CREATE POLICY "Authenticated users can read settings" ON admin_settings
   FOR SELECT
   TO authenticated
   USING (true);
 
 -- Only authenticated users can insert/update (admin check done at API level)
+DROP POLICY IF EXISTS "Authenticated users can insert settings" ON admin_settings;
 CREATE POLICY "Authenticated users can insert settings" ON admin_settings
   FOR INSERT
   TO authenticated
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated users can update settings" ON admin_settings;
 CREATE POLICY "Authenticated users can update settings" ON admin_settings
   FOR UPDATE
   TO authenticated

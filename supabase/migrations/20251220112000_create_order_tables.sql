@@ -97,21 +97,26 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for customers
+-- RLS Policies for customers
+DROP POLICY IF EXISTS "Service role has full access to customers" ON customers;
 CREATE POLICY "Service role has full access to customers"
     ON customers FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own customer record" ON customers;
 CREATE POLICY "Users can view their own customer record"
     ON customers FOR SELECT
     USING (auth_user_id = auth.uid()::text);
 
 -- RLS Policies for shipping_addresses
+DROP POLICY IF EXISTS "Service role has full access to shipping_addresses" ON shipping_addresses;
 CREATE POLICY "Service role has full access to shipping_addresses"
     ON shipping_addresses FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own addresses" ON shipping_addresses;
 CREATE POLICY "Users can view their own addresses"
     ON shipping_addresses FOR SELECT
     USING (
@@ -121,11 +126,13 @@ CREATE POLICY "Users can view their own addresses"
     );
 
 -- RLS Policies for orders
+DROP POLICY IF EXISTS "Service role has full access to orders" ON orders;
 CREATE POLICY "Service role has full access to orders"
     ON orders FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
 CREATE POLICY "Users can view their own orders"
     ON orders FOR SELECT
     USING (
@@ -135,11 +142,13 @@ CREATE POLICY "Users can view their own orders"
     );
 
 -- RLS Policies for order_items
+DROP POLICY IF EXISTS "Service role has full access to order_items" ON order_items;
 CREATE POLICY "Service role has full access to order_items"
     ON order_items FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own order items" ON order_items;
 CREATE POLICY "Users can view their own order items"
     ON order_items FOR SELECT
     USING (

@@ -17,6 +17,7 @@
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.size_formats ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on size_formats" ON public.size_formats;
 CREATE POLICY "Allow public read on size_formats"
 ON public.size_formats FOR SELECT
 TO public
@@ -27,6 +28,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on categories" ON public.categories;
 CREATE POLICY "Allow public read on categories"
 ON public.categories FOR SELECT
 TO public
@@ -37,6 +39,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on materials" ON public.materials;
 CREATE POLICY "Allow public read on materials"
 ON public.materials FOR SELECT
 TO public
@@ -47,6 +50,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_templates ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_templates" ON public.product_templates;
 CREATE POLICY "Allow public read on product_templates"
 ON public.product_templates FOR SELECT
 TO public
@@ -57,6 +61,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_variants" ON public.product_variants;
 CREATE POLICY "Allow public read on product_variants"
 ON public.product_variants FOR SELECT
 TO public
@@ -67,6 +72,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.price_tiers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on price_tiers" ON public.price_tiers;
 CREATE POLICY "Allow public read on price_tiers"
 ON public.price_tiers FOR SELECT
 TO public
@@ -77,6 +83,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_images" ON public.product_images;
 CREATE POLICY "Allow public read on product_images"
 ON public.product_images FOR SELECT
 TO public
@@ -87,6 +94,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.related_products ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on related_products" ON public.related_products;
 CREATE POLICY "Allow public read on related_products"
 ON public.related_products FOR SELECT
 TO public
@@ -97,6 +105,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.frequently_bought_together ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on frequently_bought_together" ON public.frequently_bought_together;
 CREATE POLICY "Allow public read on frequently_bought_together"
 ON public.frequently_bought_together FOR SELECT
 TO public
@@ -107,6 +116,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on applications" ON public.applications;
 CREATE POLICY "Allow public read on applications"
 ON public.applications FOR SELECT
 TO public
@@ -117,6 +127,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_applications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_applications" ON public.product_applications;
 CREATE POLICY "Allow public read on product_applications"
 ON public.product_applications FOR SELECT
 TO public
@@ -127,6 +138,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_tags ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_tags" ON public.product_tags;
 CREATE POLICY "Allow public read on product_tags"
 ON public.product_tags FOR SELECT
 TO public
@@ -137,6 +149,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_template_tags ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on product_template_tags" ON public.product_template_tags;
 CREATE POLICY "Allow public read on product_template_tags"
 ON public.product_template_tags FOR SELECT
 TO public
@@ -147,6 +160,7 @@ USING (true);
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.product_reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read on approved reviews" ON public.product_reviews;
 CREATE POLICY "Allow public read on approved reviews"
 ON public.product_reviews FOR SELECT
 TO public

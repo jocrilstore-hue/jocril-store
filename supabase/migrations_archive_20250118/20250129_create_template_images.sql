@@ -34,12 +34,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_template_images_unique_technical
 ALTER TABLE public.product_template_images ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Anyone can view images (public catalog)
+-- Policy: Anyone can view images (public catalog)
+DROP POLICY IF EXISTS "Anyone can view template images" ON public.product_template_images;
 CREATE POLICY "Anyone can view template images"
     ON public.product_template_images
     FOR SELECT
     USING (true);
 
 -- Policy: Only admins can manage images (using SECURITY DEFINER function to avoid recursion)
+DROP POLICY IF EXISTS "Admins can manage template images" ON public.product_template_images;
 CREATE POLICY "Admins can manage template images"
     ON public.product_template_images
     FOR ALL

@@ -9,13 +9,15 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 );
 
 -- Add indexes
-CREATE INDEX idx_user_roles_user_id ON public.user_roles(user_id);
-CREATE INDEX idx_user_roles_role ON public.user_roles(role);
+-- Add indexes
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON public.user_roles(role);
 
 -- Enable RLS
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own roles
+DROP POLICY IF EXISTS "Users can view own roles" ON public.user_roles;
 CREATE POLICY "Users can view own roles"
   ON public.user_roles
   FOR SELECT
@@ -23,6 +25,7 @@ CREATE POLICY "Users can view own roles"
 
 -- Policy: Only admins can insert/update/delete roles
 -- Note: This requires the check_user_is_admin function
+DROP POLICY IF EXISTS "Admins can manage all roles" ON public.user_roles;
 CREATE POLICY "Admins can manage all roles"
   ON public.user_roles
   FOR ALL
