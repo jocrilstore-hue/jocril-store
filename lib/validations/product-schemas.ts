@@ -174,7 +174,7 @@ export const productVariantSchema = z.object({
 
   mainImageUrl: z
     .string()
-    .url("URL de imagem inválida")
+    .regex(/^(https?:\/\/|\/|data:image\/)/, "URL de imagem inválida")
     .optional()
     .or(z.literal("")),
 
@@ -197,7 +197,7 @@ export const productVariantSchema = z.object({
   // Technical image (specifications diagram for this variant)
   technicalImageUrl: z
     .string()
-    .url("URL de imagem inválida")
+    .regex(/^(https?:\/\/|\/|data:image\/)/, "URL de imagem inválida")
     .optional()
     .or(z.literal("")),
 
@@ -280,7 +280,7 @@ export type PriceTierFormData = z.infer<typeof priceTierSchema>;
  */
 export const productImageSchema = z.object({
   productVariantId: z.number().int().positive(),
-  imageUrl: z.string().url("URL de imagem inválida"),
+  imageUrl: z.string().regex(/^(https?:\/\/|\/|data:image\/)/, "URL de imagem inválida"),
   imageType: z
     .enum(["main", "gallery", "thumbnail", "detail"])
     .default("gallery"),

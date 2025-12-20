@@ -38,11 +38,6 @@ import {
   calculatePriceWithVAT,
 } from "@/lib/validations/product-schemas";
 import type { ProductVariantFormData } from "@/lib/validations/product-schemas";
-import {
-  formatErrorForToast,
-  handleAsyncOperation,
-  isUniqueViolation,
-} from "@/lib/utils/supabase-errors";
 import { SpecificationsEditor } from "./specifications-editor";
 
 interface ProductVariantFormEnhancedProps {
@@ -325,46 +320,69 @@ export function ProductVariantFormEnhanced({
       orientation: values.orientation ?? null,
     };
 
-    let result;
-
     if (mode === "create") {
-      result = await handleAsyncOperation(async () =>
-        supabase.from("product_variants").insert(payload).select("id").single(),
-      );
-
-      if (result.success && result.data?.data) {
-        toast({
-          title: "Variante criada",
-          description: "Já pode ajustar os restantes detalhes.",
+      // Create mode: use API route to bypass RLS
+      try {
+        const response = await fetch("/api/admin/products/variants", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        router.push(
-          `/admin/products/${templateId}/variants/${result.data.data.id}/edit`,
-        );
-      } else if (result.error) {
-        if (isUniqueViolation(result.error)) {
+
+        const data = await response.json();
+
+        if (response.ok && data.data?.id) {
           toast({
-            title: "Formato já existente",
-            description:
-              "Este template já possui uma variação para este formato. Edite-a ou escolha outro formato.",
+            title: "Variante criada",
+            description: "Já pode ajustar os restantes detalhes.",
+          });
+          router.push(
+            `/admin/products/${templateId}/variants/${data.data.id}/edit`,
+          );
+        } else {
+          toast({
+            title: "Erro ao criar variante",
+            description: data.error || "Ocorreu um erro ao criar.",
             variant: "destructive",
           });
-        } else {
-          toast(formatErrorForToast(result.error, "Erro ao criar variante"));
         }
+      } catch (error) {
+        toast({
+          title: "Erro ao criar variante",
+          description: "Não foi possível comunicar com o servidor.",
+          variant: "destructive",
+        });
       }
     } else if (variant?.id) {
-      result = await handleAsyncOperation(async () =>
-        supabase.from("product_variants").update(payload).eq("id", variant.id),
-      );
-
-      if (result.success) {
-        toast({
-          title: "Variante atualizada",
-          description: "As alterações foram guardadas.",
+      // Edit mode: use API route to bypass RLS
+      try {
+        const response = await fetch(`/api/admin/products/variants/${variant.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        router.refresh();
-      } else if (result.error) {
-        toast(formatErrorForToast(result.error, "Erro ao atualizar variante"));
+
+        const data = await response.json();
+
+        if (response.ok) {
+          toast({
+            title: "Variante atualizada",
+            description: "As alterações foram guardadas.",
+          });
+          router.refresh();
+        } else {
+          toast({
+            title: "Erro ao atualizar variante",
+            description: data.error || "Ocorreu um erro ao guardar.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Erro ao atualizar variante",
+          description: "Não foi possível comunicar com o servidor.",
+          variant: "destructive",
+        });
       }
     }
 
