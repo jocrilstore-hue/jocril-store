@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useCart } from "@/contexts/cart-context"
 import Link from "next/link"
@@ -34,6 +34,7 @@ export default function CheckoutSuccessContent() {
     const [copied, setCopied] = useState(false)
     const [paymentStatus, setPaymentStatus] = useState<"pending" | "paid" | "error">("pending")
     const [pollCount, setPollCount] = useState(0)
+    const hasCleared = useRef(false)
 
     const orderId = searchParams.get("orderId")
     const paymentMethod = searchParams.get("method")
@@ -48,8 +49,10 @@ export default function CheckoutSuccessContent() {
     // MB Way params
     const phone = searchParams.get("phone")
 
+    // Clear cart only once when order is confirmed
     useEffect(() => {
-        if (orderId) {
+        if (orderId && !hasCleared.current) {
+            hasCleared.current = true
             clearCart()
         }
     }, [orderId, clearCart])

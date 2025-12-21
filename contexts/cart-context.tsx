@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import type { CartItem, Cart } from "@/lib/types";
 import { MAX_CART_QUANTITY, STORAGE_CART_KEY } from "@/lib/constants";
 import { logger } from "@/lib/logger";
@@ -59,7 +59,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return { totalItems, totalPrice };
   };
 
-  const addToCart = (item: Omit<CartItem, "totalPrice">) => {
+  const addToCart = useCallback((item: Omit<CartItem, "totalPrice">) => {
     setCart((prevCart) => {
       const existingItemIndex = prevCart.items.findIndex(
         (i) => i.variantId === item.variantId,
@@ -97,9 +97,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         ...totals,
       };
     });
-  };
+  }, []);
 
-  const removeFromCart = (variantId: number) => {
+  const removeFromCart = useCallback((variantId: number) => {
     setCart((prevCart) => {
       const newItems = prevCart.items.filter(
         (item) => item.variantId !== variantId,
@@ -110,11 +110,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         ...totals,
       };
     });
-  };
+  }, []);
 
-  const updateQuantity = (variantId: number, quantity: number) => {
+  const updateQuantity = useCallback((variantId: number, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(variantId);
+      setCart((prevCart) => {
+        const newItems = prevCart.items.filter(
+          (item) => item.variantId !== variantId,
+        );
+        const totals = calculateTotals(newItems);
+        return {
+          items: newItems,
+          ...totals,
+        };
+      });
       return;
     }
 
@@ -136,20 +145,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         ...totals,
       };
     });
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart({
       items: [],
       totalItems: 0,
       totalPrice: 0,
     });
-  };
+  }, []);
 
-  const getItemQuantity = (variantId: number): number => {
-    const item = cart.items.find((i) => i.variantId === variantId);
-    return item?.quantity || 0;
-  };
+  const getItemQuantity = useCallback((variantId: number): number => {
+    return cart.items.find((i) => i.variantId === variantId)?.quantity || 0;
+  }, [cart.items]);
 
   return (
     <CartContext.Provider

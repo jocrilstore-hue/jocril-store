@@ -63,6 +63,10 @@ export default function CheckoutPage() {
           .single()
 
         if (customer) {
+          // Clean phone number and check if it's a valid mobile for MB Way
+          const cleanedPhone = (customer.phone || "").replace(/\D/g, "")
+          const isValidMobileForMBWay = /^9[1236]\d{7}$/.test(cleanedPhone)
+
           setFormData((prev) => ({
             ...prev,
             fullName: `${customer.first_name || ""} ${customer.last_name || ""}`.trim(),
@@ -70,6 +74,8 @@ export default function CheckoutPage() {
             phone: customer.phone || "",
             companyName: customer.company_name || "",
             nif: customer.tax_id || "",
+            // Pre-fill MB Way phone if it's a valid Portuguese mobile number
+            mbwayPhone: isValidMobileForMBWay ? cleanedPhone : "",
           }))
 
           // Pre-fill with last shipping address if available
@@ -111,9 +117,24 @@ export default function CheckoutPage() {
   }
 
   // Validate Portuguese mobile phone
+  // Handles formats like: 912345678, +351912345678, 351 912 345 678
   const validateMBWayPhone = (phone: string): boolean => {
-    const cleaned = phone.replace(/\D/g, "")
+    let cleaned = phone.replace(/\D/g, "")
+    // Remove Portuguese country code if present (351)
+    if (cleaned.startsWith("351") && cleaned.length > 9) {
+      cleaned = cleaned.substring(3)
+    }
     return /^9[1236]\d{7}$/.test(cleaned)
+  }
+
+  // Clean phone number for API (remove country code and non-digits)
+  const cleanMBWayPhone = (phone: string): string => {
+    let cleaned = phone.replace(/\D/g, "")
+    // Remove Portuguese country code if present (351)
+    if (cleaned.startsWith("351") && cleaned.length > 9) {
+      cleaned = cleaned.substring(3)
+    }
+    return cleaned
   }
 
   const shippingCost = cart.totalPrice >= 150 ? 0 : 7.5
@@ -224,13 +245,15 @@ export default function CheckoutPage() {
         })
         router.push(`/checkout/sucesso?${params.toString()}`)
       } else {
-        // MB Way
+        // MB Way - clean phone number before sending (handles country code, spaces, etc)
+        const cleanedPhone = cleanMBWayPhone(formData.mbwayPhone)
+
         const paymentResponse = await fetch("/api/payment/mbway", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId: orderNumber,
-            phoneNumber: formData.mbwayPhone,
+            phoneNumber: cleanedPhone,
           }),
         })
 
@@ -238,6 +261,12 @@ export default function CheckoutPage() {
 
         if (!paymentResponse.ok || !paymentResult.success) {
           console.error("MB Way error:", paymentResult.error)
+          // Show the actual error to the user for phone-related issues
+          if (paymentResult.error?.includes("telemóvel") || paymentResult.error?.includes("phone")) {
+            setPhoneError(paymentResult.error || "Número de telemóvel inválido")
+            setIsSubmitting(false)
+            return
+          }
           router.push(`/checkout/sucesso?orderId=${orderNumber}&paymentError=true`)
           return
         }

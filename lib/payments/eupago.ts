@@ -81,17 +81,27 @@ export function formatReference(reference: string): string {
 /**
  * Validate Portuguese mobile phone number
  * Must be 9 digits starting with 91, 92, 93, or 96
+ * Also handles numbers with country code prefix (351)
  */
 export function validatePhoneNumber(phone: string): boolean {
-  const cleaned = phone.replace(/\D/g, "")
+  let cleaned = phone.replace(/\D/g, "")
+  // Remove Portuguese country code if present (351)
+  if (cleaned.startsWith("351") && cleaned.length > 9) {
+    cleaned = cleaned.substring(3)
+  }
   return /^9[1236]\d{7}$/.test(cleaned)
 }
 
 /**
  * Format phone for EuPago (add 351 prefix)
+ * Handles numbers with or without country code
  */
 export function formatPhoneForEuPago(phone: string): string {
-  const cleaned = phone.replace(/\D/g, "")
+  let cleaned = phone.replace(/\D/g, "")
+  // Remove country code if already present to avoid duplication
+  if (cleaned.startsWith("351") && cleaned.length > 9) {
+    cleaned = cleaned.substring(3)
+  }
   return `351${cleaned}`
 }
 
@@ -99,7 +109,11 @@ export function formatPhoneForEuPago(phone: string): string {
  * Mask phone number for display (912***678)
  */
 export function maskPhoneNumber(phone: string): string {
-  const cleaned = phone.replace(/\D/g, "")
+  let cleaned = phone.replace(/\D/g, "")
+  // Remove country code if present for consistent masking
+  if (cleaned.startsWith("351") && cleaned.length > 9) {
+    cleaned = cleaned.substring(3)
+  }
   if (cleaned.length < 9) return phone
   return `${cleaned.slice(0, 3)}***${cleaned.slice(-3)}`
 }
