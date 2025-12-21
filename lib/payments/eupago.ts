@@ -200,18 +200,31 @@ export async function createMBWayPayment(
     throw new EuPagoError("Configuração de pagamento em falta", 500)
   }
 
+  // Log the incoming phone number for debugging
+  console.log("MB Way payment - Input phone:", phoneNumber)
+  
   if (!validatePhoneNumber(phoneNumber)) {
+    console.error("MB Way validation failed for phone:", phoneNumber)
     throw new EuPagoError("Número de telemóvel inválido. Use formato 9XXXXXXXX")
   }
+
+  const formattedPhone = formatPhoneForEuPago(phoneNumber)
+  console.log("MB Way payment - Formatted phone for EuPago:", formattedPhone)
 
   const payload = {
     chave: EUPAGO_API_KEY,
     valor: Number(amount.toFixed(2)),
     id: orderId,
-    alias: formatPhoneForEuPago(phoneNumber),
+    alias: formattedPhone,
     descricao: "Encomenda Jocril",
     callback: WEBHOOK_URL,
   }
+
+  // Log the payload (without the API key for security)
+  console.log("MB Way payment - Payload:", {
+    ...payload,
+    chave: "***HIDDEN***",
+  })
 
   try {
     const response = await fetch(
@@ -231,14 +244,22 @@ export async function createMBWayPayment(
     }
 
     const data = await response.json()
+    
+    // Log the full response for debugging
+    console.log("MB Way payment - EuPago response:", data)
+    
     const parsed = mbwayResponseSchema.safeParse(data)
 
     if (!parsed.success) {
-      console.error("Invalid EuPago MB Way response:", data)
+      console.error("Invalid EuPago MB Way response schema:", data)
       throw new EuPagoError("Resposta inválida do serviço de pagamento")
     }
 
     if (!parsed.data.sucesso) {
+      console.error("MB Way payment failed:", {
+        estado: parsed.data.estado,
+        resposta: parsed.data.resposta,
+      })
       throw new EuPagoError(
         parsed.data.resposta || "Erro ao iniciar pagamento MB Way",
         parsed.data.estado
