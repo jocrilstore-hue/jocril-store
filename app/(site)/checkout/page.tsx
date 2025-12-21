@@ -546,11 +546,11 @@ export default function CheckoutPage() {
                 />
                 <Label htmlFor="acceptTerms" className="text-sm leading-relaxed cursor-pointer">
                   Aceito os{" "}
-                  <Link href="/termos" className="text-primary hover:underline" target="_blank">
+                  <Link href="/termos-condicoes" className="text-primary hover:underline" target="_blank">
                     termos e condições
                   </Link>{" "}
                   e a{" "}
-                  <Link href="/privacidade" className="text-primary hover:underline" target="_blank">
+                  <Link href="/politica-privacidade" className="text-primary hover:underline" target="_blank">
                     política de privacidade
                   </Link>
                   <span className="text-destructive"> *</span>
