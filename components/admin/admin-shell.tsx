@@ -4,7 +4,7 @@ import type React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { PackageSearch, Wrench, Gauge, Bell, Users } from "lucide-react";
+import { PackageSearch, Wrench, Gauge, Bell, Users, Truck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sidebar,
@@ -39,6 +39,12 @@ const NAV_ITEMS = [
     description: "Operações em massa e manutenção",
     href: "/admin/products/tools",
     icon: Wrench,
+  },
+  {
+    title: "Envio",
+    description: "Zonas, classes e taxas de envio",
+    href: "/admin/shipping",
+    icon: Truck,
   },
   {
     title: "Utilizadores",

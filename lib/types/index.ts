@@ -11,6 +11,7 @@
 export * from "./products";
 export * from "./cart";
 export * from "./api";
+export * from "./shipping";
 
 // Legacy re-exports from main types file (for backwards compatibility)
 export type {

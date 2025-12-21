@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ShoppingBag, CreditCard, Smartphone } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ShippingCalculator } from "@/components/checkout/shipping-calculator"
+import type { ShippingCalculationResult } from "@/lib/types/shipping"
 
 type PaymentMethod = "multibanco" | "mbway"
 
@@ -26,6 +28,8 @@ export default function CheckoutPage() {
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("multibanco")
   const [phoneError, setPhoneError] = useState("")
+  const [shippingCostCents, setShippingCostCents] = useState(0)
+  const [shippingResult, setShippingResult] = useState<ShippingCalculationResult | null>(null)
 
   const [formData, setFormData] = useState({
     // Customer info
@@ -137,8 +141,17 @@ export default function CheckoutPage() {
     return cleaned
   }
 
-  const shippingCost = cart.totalPrice >= 150 ? 0 : 7.5
+  // Shipping cost comes from ShippingCalculator component
+  const shippingCost = shippingCostCents / 100
   const finalTotal = cart.totalPrice + shippingCost
+
+  const handleShippingChange = (costCents: number, result: ShippingCalculationResult | null) => {
+    setShippingCostCents(costCents)
+    setShippingResult(result)
+  }
+
+  // Convert cart total to cents for shipping calculation
+  const subtotalCents = Math.round(cart.totalPrice * 100)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -598,26 +611,22 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-semibold">{cart.totalPrice.toFixed(2)}€</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Envio</span>
-                      <span className="font-semibold">
-                        {shippingCost === 0 ? (
-                          <span className="text-green-600">Grátis</span>
-                        ) : (
-                          <span>{shippingCost.toFixed(2)}€</span>
-                        )}
-                      </span>
+
+                    {/* Shipping Calculator */}
+                    <div className="pt-2 border-t">
+                      <ShippingCalculator
+                        cartItems={cart.items}
+                        postalCode={formData.postalCode}
+                        subtotalCents={subtotalCents}
+                        onShippingChange={handleShippingChange}
+                      />
                     </div>
-                    {cart.totalPrice < 150 && shippingCost > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Adicione {(150 - cart.totalPrice).toFixed(2)}€ para envio grátis
-                      </p>
-                    )}
+
                     <div className="flex justify-between pt-4 border-t text-lg">
                       <span className="font-bold">Total</span>
                       <span className="font-bold text-primary text-2xl">{finalTotal.toFixed(2)}€</span>
