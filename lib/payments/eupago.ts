@@ -190,6 +190,7 @@ export async function createMultibancoReference(
 
 /**
  * Create MB Way payment request
+ * Uses EuPago API v1.02 format with customerPhone and countryCode as separate fields
  */
 export async function createMBWayPayment(
   orderId: string,
@@ -208,68 +209,81 @@ export async function createMBWayPayment(
     throw new EuPagoError("Número de telemóvel inválido. Use formato 9XXXXXXXX")
   }
 
-  const formattedPhone = formatPhoneForEuPago(phoneNumber)
-  console.log("MB Way payment - Formatted phone for EuPago:", formattedPhone)
+  // Clean the phone number (remove country code if present)
+  let cleanedPhone = phoneNumber.replace(/\D/g, "")
+  if (cleanedPhone.startsWith("351") && cleanedPhone.length > 9) {
+    cleanedPhone = cleanedPhone.substring(3)
+  }
+  
+  console.log("MB Way payment - Cleaned phone:", cleanedPhone)
 
+  // New EuPago API v1.02 format
   const payload = {
-    chave: EUPAGO_API_KEY,
-    valor: Number(amount.toFixed(2)),
-    id: orderId,
-    alias: formattedPhone,
-    descricao: "Encomenda Jocril",
-    callback: WEBHOOK_URL,
+    payment: {
+      identifier: orderId,
+      amount: {
+        value: Number(amount.toFixed(2)),
+        currency: "EUR",
+      },
+      customerPhone: cleanedPhone,
+      countryCode: "+351",
+      successUrl: `${SITE_URL}/checkout/sucesso`,
+      failUrl: `${SITE_URL}/checkout`,
+      backUrl: `${SITE_URL}/carrinho`,
+      lang: "PT",
+    },
+    customer: {
+      notify: true,
+    },
   }
 
-  // Log the payload (without the API key for security)
-  console.log("MB Way payment - Payload:", {
-    ...payload,
-    chave: "***HIDDEN***",
-  })
+  // Log the payload (sanitized)
+  console.log("MB Way payment - Payload:", JSON.stringify(payload, null, 2))
 
   try {
-    const response = await fetch(
-      `${EUPAGO_BASE_URL}/clientes/rest_api/mbway/create`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    )
-
-    if (!response.ok) {
-      throw new EuPagoError(
-        "Erro ao comunicar com o serviço de pagamento",
-        response.status
-      )
-    }
+    // Use the new API v1.02 endpoint
+    const apiUrl = EUPAGO_BASE_URL.includes("sandbox") 
+      ? "https://sandbox.eupago.pt/api/v1.02/mbway/create"
+      : "https://clientes.eupago.pt/api/v1.02/mbway/create"
+    
+    console.log("MB Way payment - Using URL:", apiUrl)
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `ApiKey ${EUPAGO_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    })
 
     const data = await response.json()
     
     // Log the full response for debugging
-    console.log("MB Way payment - EuPago response:", data)
-    
-    const parsed = mbwayResponseSchema.safeParse(data)
+    console.log("MB Way payment - EuPago response:", JSON.stringify(data, null, 2))
 
-    if (!parsed.success) {
-      console.error("Invalid EuPago MB Way response schema:", data)
-      throw new EuPagoError("Resposta inválida do serviço de pagamento")
-    }
-
-    if (!parsed.data.sucesso) {
-      console.error("MB Way payment failed:", {
-        estado: parsed.data.estado,
-        resposta: parsed.data.resposta,
-      })
+    if (!response.ok) {
+      console.error("MB Way API error response:", data)
       throw new EuPagoError(
-        parsed.data.resposta || "Erro ao iniciar pagamento MB Way",
-        parsed.data.estado
+        data.message || data.resposta || "Erro ao comunicar com o serviço de pagamento",
+        response.status
       )
     }
 
-    return {
-      reference: parsed.data.referencia || orderId,
-      amount: parsed.data.valor || amount,
+    // Handle new API response format
+    if (data.transactionStatus === "Success" || data.sucesso === true) {
+      return {
+        reference: data.reference || data.referencia || orderId,
+        amount: data.amount?.value || data.valor || amount,
+      }
     }
+
+    // Handle error in response
+    console.error("MB Way payment failed:", data)
+    throw new EuPagoError(
+      data.message || data.resposta || "Erro ao iniciar pagamento MB Way",
+      data.transactionStatus || data.estado
+    )
   } catch (error) {
     if (error instanceof EuPagoError) throw error
     console.error("EuPago MB Way error:", error)
